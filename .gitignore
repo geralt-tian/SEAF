@@ -1,0 +1,21 @@
+# Build Directory
+build/
+bin/
+quantize/
+mpc_venv
+# Vim c_tags files
+c_*
+SEAL
+.vscode/
+
+ABY/
+
+# local keys
+cryptocontext.txt
+evalmultkey.txt
+evalrotkey.txt
+publickey.txt
+secretkey.txt
+
+*.zip
+SCI/build/bin/txt/Iron_random_noise.txtSCI/extern/SEAL
