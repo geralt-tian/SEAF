@@ -1,7 +1,6 @@
 # Build Directory
 build/
 bin/
-quantize/
 mpc_venv
 # Vim c_tags files
 c_*
