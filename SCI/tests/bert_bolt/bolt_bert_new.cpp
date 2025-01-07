@@ -18,7 +18,7 @@ string path = "/home/ubuntu/bolt/EzPC/quantize/mrpc";
 string output_file_path = "/home/ubuntu/bolt/EzPC/ppnlp_test_new.txt";
 int num_class = 2;
 int sample_id = 0;
-int num_sample = 1;
+int num_sample = 100;
 
 bool pruning = true;
 

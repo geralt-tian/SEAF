@@ -74,6 +74,7 @@ public:
     int run_client(string input_fname);
 
     vector<double> run(string input_fname, string mask_fname);
+    vector<double> run_new(string input_fname, string mask_fname);
 
     inline uint64_t get_comm();
     inline uint64_t get_round();

@@ -799,7 +799,7 @@ void MathFunctions::gelu(int32_t dim, uint64_t *x, uint64_t *y, int32_t bwL,
   for (int i = 0; i < dim; i++)
   {
     Drelu[i] = outb[i];
-    x_sharp[i] = outb_sharp[i];
+    x_sharp[i] = outb_star[i];
   }
   uint64_t *EMUX_output_x = new uint64_t[dim];
   uint64_t *neg_x = new uint64_t[dim];
@@ -933,12 +933,13 @@ void MathFunctions::gelu(int32_t dim, uint64_t *x, uint64_t *y, int32_t bwL,
     msb_zero[i] = 0;
   }
 
-  aux->lastbit_MSB_to_Wrap_bitMul(dim, EMUX_output_x1, out_last_bitwrap, bwL);
-  aux->clear_MSB_to_Wrap_bitMul(dim, EMUX_output_x1, msb_zero, bitMul_wrap, bwL);
-  for (int i = 0; i < dim; i++)
-  {
-    abs_xhalf[i] = ((EMUX_output_x1[i] >> 1) - bitMul_wrap[i] * (uint64_t)pow(2, bwL - 1) + out_last_bitwrap[i]) & mask_bwL;
-  }
+  // aux->lastbit_MSB_to_Wrap_bitMul(dim, EMUX_output_x1, out_last_bitwrap, bwL);
+  // aux->clear_MSB_to_Wrap_bitMul(dim, EMUX_output_x1, msb_zero, bitMul_wrap, bwL);
+  // for (int i = 0; i < dim; i++)
+  // {
+  //   abs_xhalf[i] = ((EMUX_output_x1[i] >> 1) - bitMul_wrap[i] * (uint64_t)pow(2, bwL - 1) + out_last_bitwrap[i]) & mask_bwL;
+  // }
+  trunc->truncate(dim,EMUX_output_x1,abs_xhalf,1,bwL);
 
   uint64_t *neg_abs_xhalf = new uint64_t[dim];
   for (int i = 0; i < dim; i++)

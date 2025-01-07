@@ -1590,11 +1590,11 @@ FixArray FPMath::gelu_approx_2(const FixArray& x){
   //   std::cout<<"random number = "<<random_number<<",after extend ret.data [" << i<<"] = "<< ret.data[i]<<std::endl;
   // }
   ret =fix->right_shift(ret, 7, msb_ret.data);
-  print_fix(ret);
-  // for (int i=0 ;i<10;i++)
-  // {
-  //   std::cout<<"random number = "<<random_number<<",output after right_shift ret.data [" << i<<"] = "<< ret.data[i]<<std::endl;
-  // }
+  // print_fix(ret);
+  for (int i=0 ;i<N;i++)
+  {
+    std::cout<<"output after right_shift ret.data [" << i<<"] = "<< ret.data[i]<<std::endl;
+  }
   // assert(0);
   return ret;
 }
@@ -1603,38 +1603,30 @@ FixArray FPMath::gelu_approx_3(const FixArray& x){
   int N = x.size;
   int ell = x.ell;
   int f = x.s;
-  FixArray ret = fix->input(party, x.size, x.signed_, x.ell, x.s);
+  // std::cout<<"x.ell = "<< x.ell <<std::endl;
+  // std::cout<<"ell = "<< ell <<std::endl;
+  // FixArray ret = fix->input(party, x.size, x.signed_, x.ell, x.s);
+  FixArray ret = fix->input(party, x.size, x.data , x.signed_, ell, x.s);
+  // std::cout<<"ret.ell_mask() = "<< ret.ell_mask() <<std::endl;
+  // std::cout<<"ret.ell = "<< ell <<std::endl;
+  // std::cout<<"ret.s = "<< ret.ell <<std::endl;
   int32_t la = 5;
   int32_t lb = 10;
   int32_t s = 6;
   // int32_t f = 10;
-  uint8_t *x_sharp = new uint8_t[N];
-  math->gelu(N ,x.data, ret.data,ell, la,lb ,s,f,x_sharp);
-  // std::random_device rd; 
-  // std::mt19937 gen(rd());
-  // std::uniform_int_distribution<> distrib(1, 1000000);
-  // int random_number = distrib(gen);
+  // uint8_t *x_sharp = new uint8_t[N];
+  BoolArray x_sharp = bool_op->input(party, N, 1);
 
-  
-  //     for (int i=0 ;i<10;i++)
-  //   {
-  //   std::cout<<"random number = "<<random_number<<", OUr Input x.data [" << i<<"] = "<< x.data[i]<<std::endl;
-  // }
+  math->gelu(N ,x.data, ret.data,ell, la,lb ,s,f,x_sharp.data);
 
-  //   for (int i=0 ;i<10;i++)
-  // {
-  //   std::cout<<"random number = "<<random_number<<", OUr after compute ret.data [" << i<<"] = "<< ret.data[i]<<std::endl;
-  // }
-  ret = fix->extend(ret, 37, x_sharp);
-  //     for (int i=0 ;i<10;i++)
-  // {
-  //   std::cout<<"random number = "<<random_number<<", OUr after extend ret.data [" << i<<"] = "<< ret.data[i]<<std::endl;
-  // }
-  ret = fix->right_shift(ret, 7, x_sharp);
-  //   for (int i=0 ;i<10;i++)
-  // {
-  //   std::cout<<"random number = "<<random_number<<", OUr output after right_shift ret.data [" << i<<"] = "<< ret.data[i]<<std::endl;
-  // }
+
+  // FixArray A_x_sharp= fix->B2A(x_sharp,1,ell);
+
+  ret = fix->extend(ret, 37,x_sharp.data);
+
+
+  ret = fix->right_shift(ret, 7, x_sharp.data);
+
   return ret;
 }
 
