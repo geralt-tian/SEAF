@@ -14,3 +14,6 @@ target_link_libraries(LIB_BERT_IRON SCI-HE)
 
 add_executable(IRON_BERT "iron_bert.cpp")
 target_link_libraries(IRON_BERT LIB_BERT_IRON)
+
+add_executable(IRON_BERT_new "iron_bert_new.cpp")
+target_link_libraries(IRON_BERT_new LIB_BERT_IRON)

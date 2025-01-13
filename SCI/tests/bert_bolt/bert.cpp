@@ -1911,16 +1911,16 @@ vector<double> Bert::run(string input_fname, string mask_fname){
     
     cout << "> [NETWORK]: Pooling / C consumes: " << r_pc << " rounds" << endl; 
 
-    // uint64_t total_rounds = io->num_rounds;
-    // uint64_t total_comm = io->counter;
+    uint64_t total_rounds = io->num_rounds;
+    uint64_t total_comm = io->counter;
 
-    // for(int i = 0; i < MAX_THREADS; i++){
-    //     total_rounds += nl.iopackArr[i]->get_rounds();
-    //     total_comm += nl.iopackArr[i]->get_comm();
-    // }
+    for(int i = 0; i < MAX_THREADS; i++){
+        total_rounds += nl.iopackArr[i]->get_rounds();
+        total_comm += nl.iopackArr[i]->get_comm();
+    }
 
-    // cout << "> [NETWORK]: Communication rounds: " << total_rounds - n_rounds << endl; 
-    // cout << "> [NETWORK]: Communication overhead: " << total_comm - n_comm << " bytes" << endl; 
+    cout << "> [NETWORK]: Communication rounds: " << total_rounds - n_rounds << endl; 
+    cout << "> [NETWORK]: Communication overhead: " << total_comm - n_comm << " bytes" << endl; 
     #endif 
 
     if(party == ALICE){

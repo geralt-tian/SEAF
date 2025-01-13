@@ -1567,35 +1567,8 @@ FixArray FPMath::gelu_approx_2(const FixArray& x){
 
   BoolArray msb_ret = bool_op->AND(msb_x, lt27);
 
-  //   std::random_device rd; 
-  // std::mt19937 gen(rd());
-  // std::uniform_int_distribution<> distrib(1, 1000000);
-  // int random_number = distrib(gen);
-
-  //   for (int i=0 ;i<10;i++)
-  //   {
-  //   std::cout<<"random number = "<<random_number<<",Input x.data [" << i<<"] = "<< x.data[i]<<std::endl;
-  // }
-
-  // for (int i=0 ;i<10;i++)
-  // {
-  //   std::cout<<"random number = "<<random_number<<",after compute ret.data [" << i<<"] = "<< ret.data[i]<<std::endl;
-  // }
-
   ret = fix->extend(ret, 37, msb_ret.data);
-
-
-  //   for (int i=0 ;i<10;i++)
-  // {
-  //   std::cout<<"random number = "<<random_number<<",after extend ret.data [" << i<<"] = "<< ret.data[i]<<std::endl;
-  // }
   ret =fix->right_shift(ret, 7, msb_ret.data);
-  // print_fix(ret);
-  for (int i=0 ;i<N;i++)
-  {
-    std::cout<<"output after right_shift ret.data [" << i<<"] = "<< ret.data[i]<<std::endl;
-  }
-  // assert(0);
   return ret;
 }
 
@@ -1622,10 +1595,10 @@ FixArray FPMath::gelu_approx_3(const FixArray& x){
 
   // FixArray A_x_sharp= fix->B2A(x_sharp,1,ell);
 
-  ret = fix->extend(ret, 37,x_sharp.data);
+  // ret = fix->extend(ret, 37,x_sharp.data);
 
 
-  ret = fix->right_shift(ret, 7, x_sharp.data);
+  // ret = fix->right_shift(ret, 7, x_sharp.data);
 
   return ret;
 }

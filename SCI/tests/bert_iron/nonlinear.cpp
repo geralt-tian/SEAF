@@ -254,6 +254,79 @@ void NonLinear::gelu_iron(int nthreads, uint64_t* input, uint64_t* output, int s
     }
 }
 
+
+
+
+
+// void NonLinear::gelu_new(int nthreads, uint64_t* input, uint64_t* output, int size, int ell, int s){
+//     std::thread threads[nthreads];
+//     int chunk_size = size / nthreads;
+//     for (int i = 0; i < nthreads; ++i) {
+//         int offset = i * chunk_size;
+//         int lnum_ops;
+//         if (i == (nthreads - 1)) {
+//         lnum_ops = size - offset;
+//         } else {
+//         lnum_ops = chunk_size;
+//         }
+//         threads[i] =
+//             std::thread(
+//                 gelu_new_thread, 
+//                 i, 
+//                 party, 
+//                 &input[offset], 
+//                 &output[offset], 
+//                 lnum_ops,
+//                 ell,
+//                 s,
+//                 this->fpmath[i]);
+//     }
+//     for (int i = 0; i < nthreads; ++i) {
+//         threads[i].join();
+//     }
+// }
+
+void gelu_new_thread(int tid, int party, uint64_t *x, uint64_t *y, int num_ops, int ell, int s, FPMath *fpmath) {
+  int this_party;
+  if (tid & 1) {
+    this_party = 3 - party;
+  } else {
+    this_party = party;
+  }
+  FixArray input = fpmath->fix->input(this_party, num_ops, x, true, ell, s);
+  FixArray output = fpmath->gelu_approx_3(input);
+  memcpy(y, output.data, num_ops*sizeof(uint64_t));
+}
+void NonLinear::gelu_iron_new(int nthreads, uint64_t* input, uint64_t* output, int size, int ell, int s){
+    std::thread threads[nthreads];
+    int chunk_size = size / nthreads;
+    for (int i = 0; i < nthreads; ++i) {
+        int offset = i * chunk_size;
+        int lnum_ops;
+        if (i == (nthreads - 1)) {
+        lnum_ops = size - offset;
+        } else {
+        lnum_ops = chunk_size;
+        }
+        threads[i] =
+            std::thread(
+                gelu_new_thread, 
+                i, 
+                party, 
+                &input[offset], 
+                &output[offset], 
+                lnum_ops,
+                ell,
+                s,
+                this->fpmath[i]);
+    }
+    for (int i = 0; i < nthreads; ++i) {
+        threads[i].join();
+    }
+}
+
+
+
 void tanh_thread(int tid, int party, uint64_t *x, uint64_t *y, int num_ops, int ell, int s, FPMath *fpmath) {
   int this_party;
   if (tid & 1) {

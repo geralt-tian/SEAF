@@ -36,6 +36,10 @@ public:
     void gelu(int nthreads, uint64_t* input, uint64_t* output, int size, int ell, int s);
     void gelu_iron(int nthreads, uint64_t* input, uint64_t* output, int size, int ell, int s);
 
+
+    // void gelu_new(int nthreads, uint64_t* input, uint64_t* output, int size, int ell, int s);
+    void gelu_iron_new(int nthreads, uint64_t* input, uint64_t* output, int size, int ell, int s);
+
     void tanh(int nthreads, uint64_t* input, uint64_t* output, int size, int ell, int s);
     void tanh_iron(int nthreads, uint64_t* input, uint64_t* output, int size, int ell, int s);
 

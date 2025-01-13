@@ -15,7 +15,7 @@ int num_threads = 32;
 int bitlength = 37;
 
 string path = "/home/ubuntu/bolt/EzPC/quantize/mrpc";
-string output_file_path = "/home/ubuntu/bolt/EzPC/iron_testing.txt";
+string output_file_path = "/home/ubuntu/bolt/EzPC/iron_new_testing.txt";
 int num_class = 2;
 int sample_id = 0;
 int num_sample = 1;
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     if(party == ALICE){
         for(int i = sample_id; i < sample_id + num_sample; i++ ){
             cout << "==>> Inference sample #" << i << endl;
-            vector<double> result = bt.run("", "");
+            vector<double> result = bt.run_new("", "");
         }
     } else{
         ofstream file(output_file_path);
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
         }
         for(int i = sample_id; i < sample_id + num_sample; i++ ){
             cout << "==>> Inference sample #" << i << endl;
-            vector<double> result = bt.run(
+            vector<double> result = bt.run_new(
                 path + "/weights_txt/inputs_" + to_string(i) + "_data.txt",
                 path + "/weights_txt/inputs_" + to_string(i) +  "_mask.txt"
                 );

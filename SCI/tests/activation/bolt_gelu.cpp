@@ -29,15 +29,16 @@ SOFTWARE.
 using namespace sci;
 using namespace std;
 
-#define MAX_THREADS 12
+#define MAX_THREADS 32
 
 int party, port = 32000;
-int num_threads = 12;
+int num_threads = 32;
 string address = "127.0.0.1";
 
-int dim =  128*3072;
-int bw_x = 20;
-int bw_y = 37;
+// int dim = 4096*8;
+int dim = 1048576;
+int bw_x = 21;
+int bw_y = 21;
 int s_x = 11;
 int s_y = 4;
 
@@ -104,6 +105,18 @@ int main(int argc, char **argv) {
   uint64_t *x = new uint64_t[dim];
   uint64_t *y = new uint64_t[dim];
 
+    //     if (party == ALICE)
+    // {
+    //   for (int i = 0; i < dim; i++)
+    //   x[i] = 0 ;
+    // }
+    // else
+    // {
+    //     for (int i = 0; i < dim; i++) {
+    //   x[i] = (i) & mask_x;
+    // }
+    // }
+
   prg.random_data(x, dim * sizeof(uint64_t));
 
   for (int i = 0; i < dim; i++) {
@@ -161,18 +174,19 @@ int main(int argc, char **argv) {
 
     uint64_t total_err = 0;
     uint64_t max_ULP_err = 0;
+    
     for (int i = 0; i < dim; i++) {
       double dbl_x = (signed_val(x0[i] + x[i], bw_x)) / double(1LL << s_x);
       double dbl_y = (signed_val(y0[i] + y[i], bw_y)) / double(1LL << s_y);
 
       // GELU function for verification
       double gelu_y = 0.5*dbl_x*(1+tanh(sqrt(2/M_PI)*(dbl_x+0.044715*dbl_x*dbl_x*dbl_x)));
-
+      // s_y =11;
       uint64_t err = computeULPErr(dbl_y, gelu_y, s_y);
       total_err += err;
       max_ULP_err = std::max(max_ULP_err, err);
     }
-
+cerr << "total_err: " << total_err  << endl;
     cerr << "Average ULP error: " << total_err / dim << endl;
     cerr << "Max ULP error: " << max_ULP_err << endl;
     cerr << "Number of tests: " << dim << endl;

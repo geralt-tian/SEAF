@@ -11,14 +11,14 @@ using namespace sci;
 int party = 0;
 int port = 8000;
 string address = "127.0.0.1";
-int num_threads = 4;
+int num_threads = 1;
 int bitlength = 37;
 
 string path = "/home/ubuntu/bolt/EzPC/quantize/mrpc";
 string output_file_path = "/home/ubuntu/bolt/EzPC/ppnlp_test.txt";
 int num_class = 2;
 int sample_id = 0;
-int num_sample = 100;
+int num_sample = 1;
 
 bool pruning = true;
 

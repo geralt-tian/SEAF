@@ -29,17 +29,18 @@ SOFTWARE.
 using namespace sci;
 using namespace std;
 
-#define MAX_THREADS 1
+#define MAX_THREADS 32
 
 int party, port = 32000;
-int num_threads = 1;
+int num_threads = 32;
 string address = "127.0.0.1";
 
-int dim =  1*3072;
-int bw_x = 20;
-int bw_y = 37;
-int s_x = 11;
-int s_y = 4;
+// int dim =  4096*8;
+int dim = 1048576;
+int bw_x = 21;
+int bw_y = 21;
+int s_x = 12;
+int s_y = 12;
 
 uint64_t mask_x = (bw_x == 64 ? -1 : ((1ULL << 12) - 1));
 uint64_t mask_y = (bw_y == 64 ? -1 : ((1ULL << 13) - 1));
