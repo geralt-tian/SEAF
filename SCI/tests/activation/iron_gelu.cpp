@@ -28,20 +28,21 @@ SOFTWARE.
 using namespace sci;
 using namespace std;
 
-#define MAX_THREADS 12
+#define MAX_THREADS 32
 
 int party, port = 32000;
-int num_threads = 12;
+int num_threads = 32;
 string address = "127.0.0.1";
 
-int dim =  128*3072;
+// int dim =  1048576;
+int dim = 4096*8;
 int bw_x = 37;
 int bw_y = 37;
 int s_x = 12;
 int s_y = 12;
 
-uint64_t mask_x = (bw_x == 64 ? -1 : ((1ULL << 14) - 1));
-uint64_t mask_y = (bw_y == 64 ? -1 : ((1ULL << 14) - 1));
+uint64_t mask_x = (bw_x == 64 ? -1 : ((1ULL << 12) - 1));
+uint64_t mask_y = (bw_y == 64 ? -1 : ((1ULL << 12) - 1));
 
 IOPack *iopackArr[MAX_THREADS];
 OTPack *otpackArr[MAX_THREADS];
@@ -102,12 +103,23 @@ int main(int argc, char **argv) {
 
   uint64_t *x = new uint64_t[dim];
   uint64_t *y = new uint64_t[dim];
+          if (party == ALICE)
+    {
+      for (int i = 0; i < dim; i++)
+      x[i] = 0 ;
+    }
+    else
+    {
+        for (int i = 0; i < dim; i++) {
+      x[i] = (i-16384) & mask_x;
+    }
+    }
 
-  prg.random_data(x, dim * sizeof(uint64_t));
+  // prg.random_data(x, dim * sizeof(uint64_t));
 
-  for (int i = 0; i < dim; i++) {
-    x[i] &= mask_x;
-  }
+  // for (int i = 0; i < dim; i++) {
+  //   x[i] &= mask_x;
+  // }
 
   /************** Fork Threads ****************/
   /********************************************/
@@ -160,12 +172,12 @@ int main(int argc, char **argv) {
 
       // GELU function for verification
       double gelu_y = 0.5*dbl_x*(1+tanh(sqrt(2/M_PI)*(dbl_x+0.044715*dbl_x*dbl_x*dbl_x)));
-
+      // s_y =12;
       uint64_t err = computeULPErr(dbl_y, gelu_y, s_y);
       total_err += err;
       max_ULP_err = std::max(max_ULP_err, err);
     }
-
+    cerr << "Average ULP error: " << total_err << endl;
     cerr << "Average ULP error: " << total_err / dim << endl;
     cerr << "Max ULP error: " << max_ULP_err << endl;
     cerr << "Number of tests: " << dim << endl;

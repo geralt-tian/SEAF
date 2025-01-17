@@ -35,15 +35,15 @@ int party, port = 32000;
 int num_threads = 32;
 string address = "127.0.0.1";
 
-// int dim = 4096*8;
-int dim = 1048576;
-int bw_x = 21;
-int bw_y = 21;
-int s_x = 11;
+int dim = 4096*8;
+// int dim = 1048576;
+int bw_x = 37;
+int bw_y = 37;
+int s_x = 12;
 int s_y = 4;
 
 uint64_t mask_x = (bw_x == 64 ? -1 : ((1ULL << 12) - 1));
-uint64_t mask_y = (bw_y == 64 ? -1 : ((1ULL << 13) - 1));
+uint64_t mask_y = (bw_y == 64 ? -1 : ((1ULL << 12) - 1));
 
 IOPack *iopackArr[MAX_THREADS];
 OTPack *otpackArr[MAX_THREADS];
@@ -105,23 +105,23 @@ int main(int argc, char **argv) {
   uint64_t *x = new uint64_t[dim];
   uint64_t *y = new uint64_t[dim];
 
-    //     if (party == ALICE)
-    // {
-    //   for (int i = 0; i < dim; i++)
-    //   x[i] = 0 ;
-    // }
-    // else
-    // {
-    //     for (int i = 0; i < dim; i++) {
-    //   x[i] = (i) & mask_x;
-    // }
-    // }
+        if (party == ALICE)
+    {
+      for (int i = 0; i < dim; i++)
+      x[i] = 0 ;
+    }
+    else
+    {
+        for (int i = 0; i < dim; i++) {
+      x[i] = (i-16384) & mask_x;
+    }
+    }
 
-  prg.random_data(x, dim * sizeof(uint64_t));
+  // prg.random_data(x, dim * sizeof(uint64_t));
 
-  for (int i = 0; i < dim; i++) {
-    x[i] &= mask_x;
-  }
+  // for (int i = 0; i < dim; i++) {
+  //   x[i] &= mask_x;
+  // }
 
   /************** Fork Threads ****************/
   /********************************************/

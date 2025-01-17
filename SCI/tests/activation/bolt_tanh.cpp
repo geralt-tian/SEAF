@@ -29,13 +29,14 @@ SOFTWARE.
 using namespace sci;
 using namespace std;
 
-#define MAX_THREADS 12
+#define MAX_THREADS 32
 
 int party, port = 32000;
-int num_threads = 12;
+int num_threads = 32;
 string address = "127.0.0.1";
 
-int dim =  768;
+// int dim =  768;
+int dim = 1048576;
 int bw_x = 37;
 int bw_y = 37;
 int s_x = 12;
