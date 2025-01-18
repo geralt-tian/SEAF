@@ -741,6 +741,15 @@ void MathFunctions::select_share(uint8_t *sel, uint64_t *x, uint64_t *y, uint64_
   }
 }
 
+void MathFunctions::second_interval(uint64_t *input_data, uint8_t *res_drelu_cmp, uint8_t *res_drelu_eq, int32_t dim, int32_t d, int32_t bwL)
+{
+  uint64_t *comp_eq_input = new uint64_t[dim];
+  uint64_t *outtrunc = new uint64_t[dim];
+  uint8_t *res_cmp = new uint8_t[dim];
+  trunc->truncate_and_reduce(dim, input_data, outtrunc, d, bwL); // test comm
+  DReLU_Eq(outtrunc, res_drelu_cmp, res_drelu_eq, dim, bwL - d);
+}
+
 void MathFunctions::third_interval(uint64_t *input_data, uint8_t *res_drelu_cmp, uint8_t *res_drelu_eq, uint8_t *res_eq, int32_t dim, int32_t d, int32_t bwL)
 {
 
@@ -988,6 +997,939 @@ void MathFunctions::gelu(int32_t dim, uint64_t *x, uint64_t *y, int32_t bwL,
   delete[] out_last_bitwrap;
   delete[] neg_abs_xhalf;
   delete[] MUX_output_g;
+}
+
+
+void MathFunctions::gelu(int32_t dim, uint64_t *x, uint64_t *y, int32_t bwL,
+                         int32_t la, int32_t lb, int32_t s, int32_t f)
+{
+  uint64_t h = f + 2;
+  uint64_t d = f + 2;
+  uint64_t mask_h = (h == 64) ? ~0ULL : (1ULL << h) - 1;
+  uint64_t mask_bwL = (bwL == 64 ? -1 : ((1ULL << bwL) - 1));
+  //4,9
+  std::vector<std::vector<uint64_t>> data = {{0,0}, {1,510}, {1,510}, {1,510}, {2,502}, {2,502}, {2,502}, {3,489}, {3,489}, {3,489}, {4,469}, {4,469}, {4,469}, {4,469}, {4,470}, {5,440}, {5,439}, {5,439}, {5,438}, {5,438}, {5,438}, {5,438}, {5,438}, {5,438}, {5,438}, {5,438}, {5,438}, {5,438}, {5,438}, {5,438}, {5,437}, {5,437}, {5,436}, {5,435}, {5,434}, {4,504}, {4,505}, {4,506}, {4,507}, {4,508}, {4,508}, {4,509}, {4,509}, {4,510}, {4,510}, {4,510}, {4,511}, {4,511}, {4,511}, {4,511}, {4,511}, {4,511}, {4,0}, {4,0}, {4,0}, {4,0}, {4,0}, {4,0}, {4,0}, {4,0}, {4,0}, {4,0}, {4,0}, {4,0}};
+  //5,11
+// std::vector<std::vector<uint64_t>> data = {{0,0}, {1,2046}, {2,2038}, {3,2026}, {3,2026}, {4,2008}, {5,1984}, {6,1955}, {6,1954}, {7,1918}, {7,1918}, {8,1874}, {8,1874}, {9,1822}, {9,1821}, {9,1821}, {9,1822}, {10,1755}, {10,1754}, {10,1753}, {10,1753}, {10,1753}, {10,1753}, {10,1753}, {10,1753}, {10,1753}, {10,1753}, {10,1753}, {10,1752}, {10,1750}, {10,1749}, {9,1873}, {9,1874}, {9,1875}, {9,1876}, {9,1876}, {9,1876}, {9,1875}, {9,1874}, {9,1873}, {9,1871}, {8,2035}, {8,2037}, {8,2039}, {8,2040}, {8,2041}, {8,2043}, {8,2043}, {8,2044}, {8,2045}, {8,2045}, {8,2046}, {8,2046}, {8,2047}, {8,2047}, {8,2047}, {8,2047}, {8,2047}, {8,0}, {8,0}, {8,0}, {8,0}, {8,0}, {8,0}};
+  //7,11
+// std::vector<std::vector<uint64_t>> data = {{1,0}, {4,2046}, {8,2038}, {11,2029}, {14,2017}, {17,2002}, {20,1984}, {22,1970}, {25,1946}, {27,1928}, {29,1908}, {31,1886}, {33,1862}, {34,1849}, {36,1821}, {37,1806}, {38,1789}, {39,1772}, {39,1772}, {40,1753}, {40,1753}, {40,1753}, {40,1753}, {40,1753}, {40,1753}, {40,1753}, {40,1753}, {39,1780}, {39,1780}, {39,1780}, {38,1810}, {38,1810}, {37,1842}, {37,1842}, {36,1876}, {36,1876}, {36,1876}, {35,1913}, {35,1913}, {35,1912}, {34,1952}, {34,1952}, {34,1952}, {34,1952}, {33,1996}, {33,1996}, {33,1996}, {33,1996}, {33,1996}, {33,1995}, {33,1995}, {32,2046}, {32,2046}, {32,2047}, {32,2047}, {32,2047}, {32,2047}, {32,2047}, {32,0}, {32,0}, {32,0}, {32,0}, {32,0}, {32,0}};
+
+  MultMode mode = MultMode::None;
+  uint64_t *a_alice = new uint64_t[dim];
+  uint64_t *b_alice = new uint64_t[dim];
+  uint64_t *a_bob = new uint64_t[dim];
+  uint64_t *b_bob = new uint64_t[dim];
+  if (party == ALICE)
+  {
+    for (size_t i = 0; i < dim; i++)
+    {
+      a_bob[i] = 0;
+      b_bob[i] = 0;
+    }
+  }
+
+  uint8_t *Drelu = new uint8_t[dim];
+  uint8_t *outb = new uint8_t[dim];
+  uint8_t *outb_star = new uint8_t[dim];
+  uint8_t *outb_sharp = new uint8_t[dim];
+
+  third_interval(x, outb, outb_star, outb_sharp, dim, d, bwL);
+
+  for (int i = 0; i < dim; i++)
+  {
+    Drelu[i] = outb[i];
+  }
+  uint64_t *EMUX_output_x = new uint64_t[dim];
+  uint64_t *neg_x = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    neg_x[i] = ((-x[i]) & mask_bwL); // 取反
+  }
+  if (party == ALICE)
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      neg_x[i] = (neg_x[i] -1) & mask_bwL;
+    }
+  }
+  select_share(outb, x, neg_x, EMUX_output_x, dim, bwL);
+  uint64_t *EMUX_output_x1 = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    EMUX_output_x1[i] = EMUX_output_x[i];
+  }
+  uint64_t *outtrunc = new uint64_t[dim];
+  uint64_t *EMUX_output_x1_h = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    // std::cout << "outtrunc[" << i << "] = " << outtrunc[i] << std::endl;
+    EMUX_output_x1_h[i] = EMUX_output_x1[i] & mask_h;
+  }
+  trunc->truncate_and_reduce(dim, EMUX_output_x1_h, outtrunc, h - s, h);
+  uint64_t N = 1ULL << s;
+  uint64_t **spec_a = new uint64_t *[dim];
+  uint64_t **spec_b = new uint64_t *[dim];
+  if (party == ALICE)
+    for (int i = 0; i < dim; i++)
+    {
+      spec_a[i] = new uint64_t[N];
+      spec_b[i] = new uint64_t[N];
+      for (int j = 0; j < N; j++)
+      {
+        spec_a[i][j] = data[j][0];
+        spec_b[i][j] = data[j][1];
+        // std::cout << "i = " << i << ", j = " << j << ", data = " << data[j][i] << std::endl;
+      }
+    }
+  uint64_t *outtrunc1 = new uint64_t[dim];
+  uint64_t *outtrunc_a = new uint64_t[dim];
+  if (party == ALICE)
+  {
+    iopack->io->send_data(outtrunc, dim * sizeof(uint64_t)); // 计算通信的时候减掉这部分
+  }
+  else
+  { // party == BOB
+    iopack->io->recv_data(outtrunc1, dim * sizeof(uint64_t));
+
+    for (int i = 0; i < dim; i++)
+    {
+      outtrunc_a[i] = (outtrunc[i] + outtrunc1[i]) & ((1ULL << s) - 1);
+      // std::cout << "outtrunc_a[" << i << "] = " << outtrunc_a[i] << std::endl;
+    }
+  }
+
+  if (party == ALICE)
+  {
+    aux->lookup_table<uint64_t>(spec_a, nullptr, nullptr, dim, s, la); // step 12 lut
+  }
+  else
+  {                                                                      // party == BOB
+    aux->lookup_table<uint64_t>(nullptr, outtrunc_a, a_bob, dim, s, la); // a_bob是查询到的斜率
+  }
+  if (party == ALICE)
+  {
+    aux->lookup_table<uint64_t>(spec_b, nullptr, nullptr, dim, s, lb); // step 12 lut
+  }
+  else
+  {                                                                      // party == BOB
+    aux->lookup_table<uint64_t>(nullptr, outtrunc_a, b_bob, dim, s, lb); // b_bob是查询到的截距  重要问题，这里的outtrunc应该是两边share加起来，代码里只有Bob的outtrunc check
+  }
+
+  uint8_t *msb1 = new uint8_t[dim];
+  uint8_t *msb2 = new uint8_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    msb1[i] = 0;
+    msb2[i] = 0;
+  }
+  uint64_t *outax = new uint64_t[dim];
+  prod->hadamard_product(dim, a_bob, EMUX_output_x, outax, la, bwL, la + bwL, true, true, mode, msb1, msb2);
+
+  for (int i = 0; i < dim; i++)
+    outax[i] = (outax[i] >> (la - 1)) & mask_bwL;
+
+  uint64_t *b_SExt = new uint64_t[dim];
+  uint8_t *msb_b_extend = new uint8_t[dim];
+  uint64_t mask_lb = (lb == 64 ? -1 : ((1ULL << lb) - 1));
+  if (party == ALICE)
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      msb_b_extend[i] = 1;
+      b_bob[i] = (b_bob[i] + 10) & mask_lb;
+    }
+  }
+  else
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      msb_b_extend[i] = 1;
+      b_bob[i] = (b_bob[i] - 10) & mask_lb;
+    }
+  }
+
+  ext->s_extend_msb(dim, b_bob, b_SExt, lb, bwL, msb_b_extend);
+  uint64_t *z = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    z[i] = ((outax[i] + b_SExt[i] * static_cast<uint64_t>(std::pow(2, f - lb + 1))) & mask_bwL);
+    // std::cout << "z[" << i << "] = " << z[i] << std::endl;
+    // std::cout << "outax[" << i << "] = " << outax[i] << std::endl;
+    // std::cout << "b_SExt[" << i << "] = " << b_SExt[i] << std::endl;
+  }
+
+  uint8_t *Drelu_ = new uint8_t[dim];
+  uint8_t *DreluMSB = new uint8_t[dim];
+  uint64_t *xhalf = new uint64_t[dim];
+  uint64_t *abs_xhalf = new uint64_t[dim];
+  uint64_t *bitMul_wrap = new uint64_t[dim];
+  uint64_t *out_last_bitwrap = new uint64_t[dim];
+
+  uint8_t *msb_zero = new uint8_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    msb_zero[i] = 0;
+  }
+
+  aux->lastbit_MSB_to_Wrap_bitMul(dim, EMUX_output_x1, out_last_bitwrap, bwL);
+  aux->clear_MSB_to_Wrap_bitMul(dim, EMUX_output_x1, msb_zero, bitMul_wrap, bwL);
+  for (int i = 0; i < dim; i++)
+  {
+    abs_xhalf[i] = ((EMUX_output_x1[i] >> 1) - bitMul_wrap[i] * (uint64_t)pow(2, bwL - 1) + out_last_bitwrap[i]) & mask_bwL;
+  }
+
+  uint64_t *neg_abs_xhalf = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    neg_abs_xhalf[i] = (-abs_xhalf[i]+1048576) & mask_bwL;
+  }
+  select_share(Drelu, abs_xhalf, neg_abs_xhalf, xhalf, dim, bwL); // step 22 ss
+
+  uint64_t *MUX_output_g = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    Drelu_[i] = (outb_star[i] + outb_sharp[i]) & 1;
+            if (party == ALICE)
+        {
+            Drelu_[i] = Drelu_[i] ^ 1;
+        }
+  }
+  select_share(Drelu_, abs_xhalf, z, MUX_output_g, dim, bwL);
+  for (int i = 0; i < dim; i++)
+  {
+    y[i] = (xhalf[i] + MUX_output_g[i]) & mask_bwL;
+  }
+
+  delete[] a_bob;
+  delete[] b_bob;
+  delete[] outb;
+  delete[] outb_star;
+  delete[] outb_sharp;
+  delete[] EMUX_output_x;
+  delete[] neg_x;
+  delete[] EMUX_output_x1;
+  delete[] outtrunc;
+  delete[] EMUX_output_x1_h;
+  delete[] outtrunc1;
+  delete[] outtrunc_a;
+  delete[] msb1;
+  delete[] msb2;
+  delete[] b_SExt;
+  delete[] msb_b_extend;
+  delete[] z;
+  delete[] Drelu_;
+  delete[] DreluMSB;
+  delete[] xhalf;
+  delete[] abs_xhalf;
+  delete[] bitMul_wrap;
+  delete[] out_last_bitwrap;
+  delete[] neg_abs_xhalf;
+  delete[] MUX_output_g;
+}
+
+
+void MathFunctions::tanh(int32_t dim, uint64_t *x, uint64_t *y, int32_t bwL,
+                         int32_t la, int32_t lb, int32_t s, int32_t f)
+{
+  uint64_t h = f + 2;
+  uint64_t d = f + 2;
+  uint64_t mask_h = (h == 64) ? ~0ULL : (1ULL << h) - 1;
+  uint64_t mask_bwL = (bwL == 64 ? -1 : ((1ULL << bwL) - 1));
+  //4,10
+std::vector<std::vector<uint64_t>> data = {{7,2}, {7,6}, {7,9}, {7,12}, {7,14}, {7,15}, {7,15}, {6,44}, {6,45}, {6,44}, {5,85}, {5,85}, {5,84}, {4,136}, {4,136}, {4,135}, {3,198}, {3,199}, {3,198}, {2,274}, {2,275}, {2,275}, {2,274}, {2,272}, {1,368}, {1,369}, {1,370}, {1,370}, {1,370}, {1,369}, {1,368}, {1,366}, {1,365}, {0,497}, {0,498}, {0,500}, {0,501}, {0,503}, {0,504}, {0,505}, {0,506}, {0,506}, {0,507}, {0,508}, {0,508}, {0,509}, {0,509}, {0,509}, {0,510}, {0,510}, {0,510}, {0,510}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}};
+  //5,11
+// std::vector<std::vector<uint64_t>> data = {{15,2}, {15,6}, {15,9}, {15,10}, {15,10}, {14,30}, {14,30}, {13,57}, {12,90}, {11,127}, {11,127}, {10,171}, {9,219}, {8,272}, {8,272}, {7,332}, {6,397}, {6,397}, {5,469}, {5,469}, {4,549}, {4,549}, {3,638}, {3,639}, {3,638}, {2,739}, {2,740}, {2,740}, {2,739}, {2,738}, {1,858}, {1,859}, {1,859}, {1,859}, {1,859}, {1,858}, {1,857}, {1,855}, {1,853}, {0,1009}, {0,1011}, {0,1013}, {0,1014}, {0,1015}, {0,1016}, {0,1017}, {0,1018}, {0,1019}, {0,1019}, {0,1020}, {0,1020}, {0,1021}, {0,1021}, {0,1021}, {0,1022}, {0,1022}, {0,1022}, {0,1022}, {0,1023}, {0,1023}, {0,1023}, {0,1023}, {0,1023}, {0,1023}};
+  //7,12
+// std::vector<std::vector<uint64_t>> data = {{63,1}, {63,2}, {62,7}, {61,14}, {59,30}, {57,50}, {54,87}, {52,115}, {49,163}, {46,216}, {43,276}, {40,341}, {37,413}, {34,490}, {31,574}, {28,664}, {26,728}, {23,829}, {21,902}, {19,978}, {17,1058}, {15,1142}, {14,1186}, {12,1278}, {11,1326}, {10,1375}, {9,1427}, {8,1480}, {7,1536}, {6,1594}, {5,1654}, {5,1655}, {4,1719}, {4,1719}, {3,1787}, {3,1787}, {3,1787}, {2,1861}, {2,1861}, {2,1861}, {2,1860}, {1,1942}, {1,1943}, {1,1943}, {1,1943}, {1,1943}, {1,1943}, {1,1942}, {1,1941}, {1,1941}, {0,2041}, {0,2041}, {0,2042}, {0,2043}, {0,2043}, {0,2044}, {0,2044}, {0,2045}, {0,2045}, {0,2046}, {0,2046}, {0,2046}, {0,2046}, {0,2047}};
+
+  MultMode mode = MultMode::None;
+  uint64_t *a_alice = new uint64_t[dim];
+  uint64_t *b_alice = new uint64_t[dim];
+  uint64_t *a_bob = new uint64_t[dim];
+  uint64_t *b_bob = new uint64_t[dim];
+  if (party == ALICE)
+  {
+    for (size_t i = 0; i < dim; i++)
+    {
+      a_bob[i] = 0;
+      b_bob[i] = 0;
+    }
+  }
+
+  uint8_t *Drelu = new uint8_t[dim];
+  uint8_t *outb = new uint8_t[dim];
+  uint8_t *outb_star = new uint8_t[dim];
+  uint8_t *outb_sharp = new uint8_t[dim];
+
+  third_interval(x, outb, outb_star, outb_sharp, dim, d, bwL);
+
+  for (int i = 0; i < dim; i++)
+  {
+    Drelu[i] = outb[i];
+  }
+  uint64_t *EMUX_output_x = new uint64_t[dim];
+  uint64_t *neg_x = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    neg_x[i] = ((-x[i]+1048576) & mask_bwL); // 取反
+  }
+  if (party == ALICE)
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      neg_x[i] = (neg_x[i] -1) & mask_bwL;
+    }
+  }
+  select_share(outb, x, neg_x, EMUX_output_x, dim, bwL);
+  uint64_t *EMUX_output_x1 = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    EMUX_output_x1[i] = EMUX_output_x[i];
+  }
+  uint64_t *outtrunc = new uint64_t[dim];
+  uint64_t *EMUX_output_x1_h = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    // std::cout << "outtrunc[" << i << "] = " << outtrunc[i] << std::endl;
+    EMUX_output_x1_h[i] = EMUX_output_x1[i] & mask_h;
+  }
+  trunc->truncate_and_reduce(dim, EMUX_output_x1_h, outtrunc, h - s, h);
+  uint64_t N = 1ULL << s;
+  uint64_t **spec_a = new uint64_t *[dim];
+  uint64_t **spec_b = new uint64_t *[dim];
+  if (party == ALICE)
+    for (int i = 0; i < dim; i++)
+    {
+      spec_a[i] = new uint64_t[N];
+      spec_b[i] = new uint64_t[N];
+      for (int j = 0; j < N; j++)
+      {
+        spec_a[i][j] = data[j][0];
+        spec_b[i][j] = data[j][1];
+        // std::cout << "i = " << i << ", j = " << j << ", data = " << data[j][i] << std::endl;
+      }
+    }
+  uint64_t *outtrunc1 = new uint64_t[dim];
+  uint64_t *outtrunc_a = new uint64_t[dim];
+  if (party == ALICE)
+  {
+    iopack->io->send_data(outtrunc, dim * sizeof(uint64_t)); // 计算通信的时候减掉这部分
+  }
+  else
+  { // party == BOB
+    iopack->io->recv_data(outtrunc1, dim * sizeof(uint64_t));
+
+    for (int i = 0; i < dim; i++)
+    {
+      outtrunc_a[i] = (outtrunc[i] + outtrunc1[i]) & ((1ULL << s) - 1);
+      // std::cout << "outtrunc_a[" << i << "] = " << outtrunc_a[i] << std::endl;
+    }
+  }
+
+  if (party == ALICE)
+  {
+    aux->lookup_table<uint64_t>(spec_a, nullptr, nullptr, dim, s, la); // step 12 lut
+  }
+  else
+  {                                                                      // party == BOB
+    aux->lookup_table<uint64_t>(nullptr, outtrunc_a, a_bob, dim, s, la); // a_bob是查询到的斜率
+  }
+  if (party == ALICE)
+  {
+    aux->lookup_table<uint64_t>(spec_b, nullptr, nullptr, dim, s, lb); // step 12 lut
+  }
+  else
+  {                                                                      // party == BOB
+    aux->lookup_table<uint64_t>(nullptr, outtrunc_a, b_bob, dim, s, lb); // b_bob是查询到的截距  重要问题，这里的outtrunc应该是两边share加起来，代码里只有Bob的outtrunc check
+  }
+
+  uint8_t *msb1 = new uint8_t[dim];
+  uint8_t *msb2 = new uint8_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    msb1[i] = 0;
+    msb2[i] = 0;
+  }
+  uint64_t *outax = new uint64_t[dim];
+  prod->hadamard_product(dim, a_bob, EMUX_output_x, outax, la, bwL, la + bwL, true, true, mode, msb1, msb2);
+
+  for (int i = 0; i < dim; i++)
+    outax[i] = (outax[i] >> (la - 1)) & mask_bwL;
+
+  uint64_t *b_SExt = new uint64_t[dim];
+  uint8_t *msb_b_extend = new uint8_t[dim];
+  uint64_t mask_lb = (lb == 64 ? -1 : ((1ULL << lb) - 1));
+  if (party == ALICE)
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      msb_b_extend[i] = 1;
+      b_bob[i] = (b_bob[i] + 10) & mask_lb;
+    }
+  }
+  else
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      msb_b_extend[i] = 1;
+      b_bob[i] = (b_bob[i] - 10) & mask_lb;
+    }
+  }
+  // for (int i = 0; i < dim; i++)
+  // {
+  //   std::cout << "b_bob[" << i << "] = " << b_bob[i] << std::endl;
+  // }
+  ext->s_extend(dim, b_bob, b_SExt, lb, bwL, msb_b_extend);
+  uint64_t *z = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    z[i] = ((outax[i] + b_SExt[i] * static_cast<uint64_t>(std::pow(2, f - lb + 1))) & mask_bwL);
+    // std::cout << "z[" << i << "] = " << z[i] << std::endl;
+    // std::cout << "outax[" << i << "] = " << outax[i] << std::endl;
+    // std::cout << "b_SExt[" << i << "] = " << b_SExt[i] << std::endl;
+  }
+
+  uint8_t *Drelu_ = new uint8_t[dim];
+  uint8_t *DreluMSB = new uint8_t[dim];
+  uint64_t *xhalf = new uint64_t[dim];
+  uint64_t *abs_xhalf = new uint64_t[dim];
+  uint64_t *bitMul_wrap = new uint64_t[dim];
+  uint64_t *out_last_bitwrap = new uint64_t[dim];
+
+    uint64_t *one_f = new uint64_t[dim];
+    uint64_t *z_or_one = new uint64_t[dim];
+   uint64_t pow_f = pow(2, f);
+    for (int i = 0; i < dim; i++)
+    {
+        Drelu_[i] = (outb_star[i] + outb_sharp[i]) & 1;
+        one_f[i] = 0.5 * pow_f;
+    }
+
+    select_share(Drelu_,  z, one_f, z_or_one, dim, bwL); // step 20 ss
+    for (int i = 0; i < dim; i++)
+    {
+      // std::cout << "one_f[" << i << "] = " << one_f[i] << std::endl;
+      // std::cout << "z[" << i << "] = " << z[i] << std::endl;
+      // std::cout << "z_or_one[" << i << "] = " << z_or_one[i] << std::endl;
+
+    }
+
+    uint64_t *neg_z = new uint64_t[dim];
+    uint64_t *di_abs_z_or_one = new uint64_t[dim];
+    for (int i = 0; i < dim; i++)
+    {
+      neg_z[i] = (-z_or_one[i]+1048576) & mask_bwL;
+    }
+    select_share(outb, z_or_one, neg_z, di_abs_z_or_one, dim, bwL); // step 21 ss
+
+    // for (int i = 0; i < dim; i++)
+    // {
+    //   // std:: cout << "z_or_one[" << i << "] = " << z_or_one[i] << std::endl;
+    //   // std:: cout << "neg_z[" << i << "] = " << neg_z[i] << std::endl;
+    //   // std:: cout << "di_abs_z_or_one[" << i << "] = " << di_abs_z_or_one[i] << std::endl;
+
+    // }
+    for (int i = 0; i < dim; i++)
+    {
+        y[i] = (di_abs_z_or_one[i]) & mask_bwL;
+    }
+
+  delete[] a_bob;
+  delete[] b_bob;
+  delete[] outb;
+  delete[] outb_star;
+  delete[] outb_sharp;
+  delete[] EMUX_output_x;
+  delete[] neg_x;
+  delete[] EMUX_output_x1;
+  delete[] outtrunc;
+  delete[] EMUX_output_x1_h;
+  delete[] outtrunc1;
+  delete[] outtrunc_a;
+  delete[] msb1;
+  delete[] msb2;
+  delete[] b_SExt;
+  delete[] msb_b_extend;
+  delete[] z;
+  delete[] Drelu_;
+  delete[] DreluMSB;
+  delete[] xhalf;
+  delete[] abs_xhalf;
+  delete[] bitMul_wrap;
+
+}
+
+void MathFunctions::sigmoid(int32_t dim, uint64_t *x, uint64_t *y, int32_t bwL,
+                         int32_t la, int32_t lb, int32_t s, int32_t f)
+{
+  uint64_t h = f + 3;
+  uint64_t d = f + 2;
+  uint64_t mask_h = (h == 64) ? ~0ULL : (1ULL << h) - 1;
+  uint64_t mask_bwL = (bwL == 64 ? -1 : ((1ULL << bwL) - 1));
+  // 5,9
+// std::vector<std::vector<uint64_t>> data = {{4,128}, {4,128}, {4,128}, {4,128}, {4,127}, {4,126}, {3,138}, {3,139}, {3,139}, {3,139}, {3,139}, {2,161}, {2,162}, {2,162}, {2,162}, {2,162}, {2,161}, {1,195}, {1,196}, {1,196}, {1,197}, {1,197}, {1,196}, {1,196}, {1,196}, {1,195}, {1,194}, {0,248}, {0,249}, {0,250}, {0,250}, {0,251}, {0,252}, {0,252}, {0,253}, {0,253}, {0,253}, {0,254}, {0,254}, {0,254}, {0,254}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}, {0,255}};
+  //6,10
+// std::vector<std::vector<uint64_t>> data = {{8,256}, {8,256}, {8,256}, {8,255}, {7,263}, {7,264}, {7,264}, {6,278}, {6,278}, {6,278}, {5,298}, {5,299}, {5,298}, {4,324}, {4,324}, {4,323}, {3,355}, {3,355}, {3,355}, {2,393}, {2,393}, {2,393}, {2,393}, {2,392}, {1,440}, {1,441}, {1,441}, {1,441}, {1,441}, {1,440}, {1,440}, {1,439}, {1,438}, {0,504}, {0,505}, {0,506}, {0,507}, {0,507}, {0,508}, {0,508}, {0,509}, {0,509}, {0,509}, {0,510}, {0,510}, {0,510}, {0,510}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}, {0,511}};
+  //9,13
+std::vector<std::vector<uint64_t>> data = {{64,2048}, {63,2050}, {62,2055}, {61,2062}, {59,2078}, {57,2098}, {54,2135}, {52,2163}, {49,2211}, {46,2264}, {43,2324}, {40,2389}, {37,2461}, {34,2538}, {31,2622}, {28,2712}, {26,2776}, {23,2877}, {21,2950}, {19,3026}, {17,3106}, {15,3190}, {14,3234}, {12,3326}, {11,3374}, {10,3423}, {9,3475}, {8,3528}, {7,3584}, {6,3642}, {5,3702}, {5,3703}, {4,3767}, {4,3767}, {3,3835}, {3,3835}, {3,3835}, {2,3909}, {2,3909}, {2,3909}, {2,3908}, {1,3990}, {1,3991}, {1,3991}, {1,3991}, {1,3991}, {1,3991}, {1,3990}, {1,3989}, {1,3989}, {0,4089}, {0,4089}, {0,4090}, {0,4091}, {0,4091}, {0,4092}, {0,4092}, {0,4093}, {0,4093}, {0,4094}, {0,4094}, {0,4094}, {0,4094}, {0,4095}};
+  MultMode mode = MultMode::None;
+  uint64_t *a_alice = new uint64_t[dim];
+  uint64_t *b_alice = new uint64_t[dim];
+  uint64_t *a_bob = new uint64_t[dim];
+  uint64_t *b_bob = new uint64_t[dim];
+  if (party == ALICE)
+  {
+    for (size_t i = 0; i < dim; i++)
+    {
+      a_bob[i] = 0;
+      b_bob[i] = 0;
+    }
+  }
+
+  uint8_t *Drelu = new uint8_t[dim];
+  uint8_t *outb = new uint8_t[dim];
+  uint8_t *outb_star = new uint8_t[dim];
+  uint8_t *outb_sharp = new uint8_t[dim];
+
+  third_interval(x, outb, outb_star, outb_sharp, dim, h, bwL);
+
+  for (int i = 0; i < dim; i++)
+  {
+    Drelu[i] = outb[i];
+  }
+  uint64_t *EMUX_output_x = new uint64_t[dim];
+  uint64_t *neg_x = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    neg_x[i] = ((-x[i]+1048576) & mask_bwL); // 取反
+  }
+  if (party == ALICE)
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      neg_x[i] = (neg_x[i] -1) & mask_bwL;
+    }
+  }
+  select_share(outb, x, neg_x, EMUX_output_x, dim, bwL);
+  uint64_t *EMUX_output_x1 = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    EMUX_output_x1[i] = EMUX_output_x[i];
+  }
+  uint64_t *outtrunc = new uint64_t[dim];
+  uint64_t *EMUX_output_x1_h = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    // std::cout << "outtrunc[" << i << "] = " << outtrunc[i] << std::endl;
+    EMUX_output_x1_h[i] = EMUX_output_x1[i] & mask_h;
+  }
+  trunc->truncate_and_reduce(dim, EMUX_output_x1_h, outtrunc, h - s, h);
+  uint64_t N = 1ULL << s;
+  uint64_t **spec_a = new uint64_t *[dim];
+  uint64_t **spec_b = new uint64_t *[dim];
+  if (party == ALICE)
+    for (int i = 0; i < dim; i++)
+    {
+      spec_a[i] = new uint64_t[N];
+      spec_b[i] = new uint64_t[N];
+      for (int j = 0; j < N; j++)
+      {
+        spec_a[i][j] = data[j][0];
+        spec_b[i][j] = data[j][1];
+        // std::cout << "i = " << i << ", j = " << j << ", data = " << data[j][i] << std::endl;
+      }
+    }
+  uint64_t *outtrunc1 = new uint64_t[dim];
+  uint64_t *outtrunc_a = new uint64_t[dim];
+  if (party == ALICE)
+  {
+    iopack->io->send_data(outtrunc, dim * sizeof(uint64_t)); // 计算通信的时候减掉这部分
+  }
+  else
+  { // party == BOB
+    iopack->io->recv_data(outtrunc1, dim * sizeof(uint64_t));
+
+    for (int i = 0; i < dim; i++)
+    {
+      outtrunc_a[i] = (outtrunc[i] + outtrunc1[i]) & ((1ULL << s) - 1);
+      // std::cout << "outtrunc_a[" << i << "] = " << outtrunc_a[i] << std::endl;
+    }
+  }
+
+  if (party == ALICE)
+  {
+    aux->lookup_table<uint64_t>(spec_a, nullptr, nullptr, dim, s, la); // step 12 lut
+  }
+  else
+  {                                                                      // party == BOB
+    aux->lookup_table<uint64_t>(nullptr, outtrunc_a, a_bob, dim, s, la); // a_bob是查询到的斜率
+  }
+  if (party == ALICE)
+  {
+    aux->lookup_table<uint64_t>(spec_b, nullptr, nullptr, dim, s, lb); // step 12 lut
+  }
+  else
+  {                                                                      // party == BOB
+    aux->lookup_table<uint64_t>(nullptr, outtrunc_a, b_bob, dim, s, lb); // b_bob是查询到的截距  重要问题，这里的outtrunc应该是两边share加起来，代码里只有Bob的outtrunc check
+  }
+
+  uint8_t *msb1 = new uint8_t[dim];
+  uint8_t *msb2 = new uint8_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    msb1[i] = 0;
+    msb2[i] = 0;
+  }
+  uint64_t *outax = new uint64_t[dim];
+  prod->hadamard_product(dim, a_bob, EMUX_output_x, outax, la, bwL, la + bwL, true, true, mode, msb1, msb2);
+
+  for (int i = 0; i < dim; i++)
+    outax[i] = (outax[i] >> (la - 1)) & mask_bwL;
+
+  uint64_t *b_SExt = new uint64_t[dim];
+  uint8_t *msb_b_extend = new uint8_t[dim];
+  uint64_t mask_lb = (lb == 64 ? -1 : ((1ULL << lb) - 1));
+  if (party == ALICE)
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      msb_b_extend[i] = 1;
+      b_bob[i] = (b_bob[i] + 10) & mask_lb;
+    }
+  }
+  else
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      msb_b_extend[i] = 1;
+      b_bob[i] = (b_bob[i] - 10) & mask_lb;
+    }
+  }
+  // for (int i = 0; i < dim; i++)
+  // {
+  //   std::cout << "b_bob[" << i << "] = " << b_bob[i] << std::endl;
+  // }
+  ext->s_extend(dim, b_bob, b_SExt, lb, bwL, msb_b_extend);
+  uint64_t *z = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    z[i] = ((outax[i] + b_SExt[i] * static_cast<uint64_t>(std::pow(2, f - lb + 1))) & mask_bwL);
+    // std::cout << "z[" << i << "] = " << z[i] << std::endl;
+    // std::cout << "outax[" << i << "] = " << outax[i] << std::endl;
+    // std::cout << "b_SExt[" << i << "] = " << b_SExt[i] << std::endl;
+  }
+
+  uint8_t *Drelu_ = new uint8_t[dim];
+  uint8_t *DreluMSB = new uint8_t[dim];
+  uint64_t *xhalf = new uint64_t[dim];
+  uint64_t *abs_xhalf = new uint64_t[dim];
+  uint64_t *bitMul_wrap = new uint64_t[dim];
+  uint64_t *out_last_bitwrap = new uint64_t[dim];
+
+    uint64_t *one_f = new uint64_t[dim];
+    uint64_t *z_or_one = new uint64_t[dim];
+   uint64_t pow_f = pow(2, f);
+    for (int i = 0; i < dim; i++)
+    {
+        Drelu_[i] = (outb_star[i] + outb_sharp[i]) & 1;
+        one_f[i] = 0.5 * pow_f;
+    }
+
+    select_share(Drelu_,  z, one_f, z_or_one, dim, bwL); // step 20 ss
+    for (int i = 0; i < dim; i++)
+    {
+      // std::cout << "one_f[" << i << "] = " << one_f[i] << std::endl;
+      // std::cout << "z[" << i << "] = " << z[i] << std::endl;
+      // std::cout << "z_or_one[" << i << "] = " << z_or_one[i] << std::endl;
+
+    }
+
+    uint64_t *neg_z = new uint64_t[dim];
+    uint64_t *di_abs_z_or_one = new uint64_t[dim];
+    for (int i = 0; i < dim; i++)
+    {
+      neg_z[i] = (-z_or_one[i]+2048) & mask_bwL;
+    }
+    select_share(outb, z_or_one, neg_z, di_abs_z_or_one, dim, bwL); // step 21 ss
+
+    // for (int i = 0; i < dim; i++)
+    // {
+    //   // std:: cout << "z_or_one[" << i << "] = " << z_or_one[i] << std::endl;
+    //   // std:: cout << "neg_z[" << i << "] = " << neg_z[i] << std::endl;
+    //   // std:: cout << "di_abs_z_or_one[" << i << "] = " << di_abs_z_or_one[i] << std::endl;
+
+    // }
+    for (int i = 0; i < dim; i++)
+    {
+        y[i] = (di_abs_z_or_one[i]) & mask_bwL;
+    }
+
+  delete[] a_bob;
+  delete[] b_bob;
+  delete[] outb;
+  delete[] outb_star;
+  delete[] outb_sharp;
+  delete[] EMUX_output_x;
+  delete[] neg_x;
+  delete[] EMUX_output_x1;
+  delete[] outtrunc;
+  delete[] EMUX_output_x1_h;
+  delete[] outtrunc1;
+  delete[] outtrunc_a;
+  delete[] msb1;
+  delete[] msb2;
+  delete[] b_SExt;
+  delete[] msb_b_extend;
+  delete[] z;
+  delete[] Drelu_;
+  delete[] DreluMSB;
+  delete[] xhalf;
+  delete[] abs_xhalf;
+  delete[] bitMul_wrap;
+
+}
+
+void MathFunctions::elu(int32_t dim, uint64_t *x, uint64_t *y, int32_t bwL,
+                         int32_t la, int32_t lb, int32_t s, int32_t f)
+{
+  uint64_t h = f + 3;
+  uint64_t d = f + 2;
+  uint64_t mask_h = (h == 64) ? ~0ULL : (1ULL << h) - 1;
+  uint64_t mask_bwL = (bwL == 64 ? -1 : ((1ULL << bwL) - 1));
+  //4,9
+  std::vector<std::vector<uint64_t>> data = {{0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,257}, {0,258}, {0,258}, {0,258}, {0,258}, {0,258}, {0,258}, {0,258}, {0,258}, {0,259}, {0,259}, {0,259}, {0,259}, {0,259}, {0,260}, {0,260}, {0,260}, {0,260}, {0,261}, {0,261}, {0,261}, {0,261}, {0,262}, {0,262}, {0,263}, {0,263}, {0,263}, {0,264}, {0,264}, {0,265}, {0,266}, {0,266}, {0,267}, {0,268}, {0,268}, {0,269}, {0,270}, {0,271}, {0,272}, {1,360}, {1,359}, {1,358}, {1,357}, {1,357}, {1,356}, {1,356}, {1,355}, {1,355}, {1,355}, {1,355}, {1,355}, {1,355}, {1,355}, {1,356}, {1,356}, {1,357}, {2,411}, {2,410}, {2,409}, {2,409}, {2,409}, {2,409}, {2,409}, {2,410}, {3,448}, {3,447}, {3,446}, {3,446}, {3,446}, {3,447}, {4,473}, {4,473}, {4,473}, {4,473}, {5,492}, {5,491}, {5,492}, {6,504}, {6,503}, {6,504}, {7,510}, {7,510}, {7,511}};
+  //5,11
+// std::vector<std::vector<uint64_t>> data = {{0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1026}, {0,1026}, {0,1026}, {0,1026}, {0,1026}, {0,1026}, {0,1026}, {0,1026}, {0,1027}, {0,1027}, {0,1027}, {0,1027}, {0,1027}, {0,1028}, {0,1028}, {0,1028}, {0,1028}, {0,1029}, {0,1029}, {0,1029}, {0,1030}, {0,1030}, {0,1030}, {0,1031}, {0,1031}, {0,1032}, {0,1032}, {0,1033}, {0,1033}, {0,1034}, {0,1034}, {0,1035}, {0,1036}, {0,1036}, {0,1037}, {0,1038}, {0,1039}, {0,1040}, {0,1041}, {0,1042}, {0,1043}, {0,1045}, {0,1046}, {0,1047}, {0,1049}, {0,1050}, {0,1052}, {0,1054}, {0,1056}, {1,1276}, {1,1274}, {1,1273}, {1,1271}, {1,1270}, {1,1268}, {1,1267}, {1,1267}, {1,1266}, {1,1266}, {1,1265}, {1,1266}, {1,1266}, {1,1267}, {1,1268}, {1,1269}, {1,1270}, {2,1422}, {2,1421}, {2,1419}, {2,1419}, {2,1418}, {2,1418}, {2,1419}, {2,1420}, {3,1540}, {3,1539}, {3,1538}, {3,1538}, {3,1538}, {3,1540}, {4,1636}, {4,1635}, {4,1635}, {4,1636}, {5,1717}, {5,1716}, {5,1717}, {6,1785}, {6,1785}, {6,1786}, {7,1843}, {7,1843}, {8,1891}, {8,1892}, {9,1932}, {9,1932}, {10,1965}, {11,1992}, {11,1992}, {12,2013}, {13,2029}, {14,2040}, {15,2047}, {15,2047}};
+  //7,11
+// std::vector<std::vector<uint64_t>> data = {{1,1152}, {1,1151}, {1,1150}, {1,1149}, {1,1148}, {1,1147}, {1,1146}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {0,1025}, {1,1130}, {0,1026}, {0,1026}, {0,1026}, {0,1026}, {0,1026}, {0,1026}, {0,1026}, {1,1123}, {0,1027}, {0,1027}, {0,1027}, {0,1027}, {0,1027}, {1,1118}, {0,1028}, {0,1028}, {0,1028}, {1,1115}, {0,1029}, {0,1029}, {1,1113}, {0,1030}, {0,1030}, {1,1111}, {0,1031}, {1,1110}, {0,1032}, {1,1109}, {0,1033}, {1,1108}, {1,1108}, {0,1035}, {1,1107}, {1,1107}, {1,1107}, {1,1107}, {1,1107}, {1,1107}, {1,1107}, {1,1107}, {1,1107}, {1,1107}, {2,1169}, {1,1108}, {2,1168}, {1,1109}, {2,1167}, {2,1167}, {2,1167}, {2,1167}, {2,1167}, {3,1220}, {2,1168}, {3,1219}, {3,1219}, {3,1219}, {3,1219}, {4,1266}, {3,1220}, {4,1265}, {5,1309}, {4,1266}, {5,1308}, {5,1308}, {5,1308}, {6,1347}, {6,1347}, {7,1384}, {7,1384}, {7,1384}, {8,1418}, {9,1451}, {9,1451}, {9,1451}, {10,1481}, {11,1510}, {11,1510}, {13,1564}, {13,1564}, {13,1564}, {15,1612}, {16,1635}, {17,1657}, {17,1657}, {19,1697}, {20,1716}, {22,1752}, {23,1769}, {24,1785}, {26,1815}, {27,1829}, {30,1868}, {31,1880}, {33,1902}, {35,1922}, {38,1949}, {40,1965}, {43,1986}, {45,1998}, {48,2013}, {52,2029}, {55,2038}, {58,2044}, {62,0}};
+
+  MultMode mode = MultMode::None;
+  uint64_t *a_alice = new uint64_t[dim];
+  uint64_t *b_alice = new uint64_t[dim];
+  uint64_t *a_bob = new uint64_t[dim];
+  uint64_t *b_bob = new uint64_t[dim];
+  uint64_t *inputx = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    inputx[i] = (x[i] + 16384 ) & mask_h;
+  }
+  if (party == ALICE)
+  {
+    for (size_t i = 0; i < dim; i++)
+    {
+      a_bob[i] = 0;
+      b_bob[i] = 0;
+    }
+  }
+
+  uint8_t *Drelu = new uint8_t[dim];
+  uint8_t *outb = new uint8_t[dim];
+  uint8_t *outb_star = new uint8_t[dim];
+  uint8_t *outb_sharp = new uint8_t[dim];
+  // std::cout << "outb[0] = " << outb[0] << std::endl;
+  second_interval(x, outb, outb_star, dim, h, bwL);
+  // std::cout << "outb[0] = " << outb[0] << std::endl;
+  for (int i = 0; i < dim; i++)
+  {
+    Drelu[i] = outb[i];
+  }
+  uint64_t *EMUX_output_x = new uint64_t[dim];
+  uint64_t *neg_x = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    neg_x[i] = ((-inputx[i]+1048576) & mask_bwL); // 取反
+  }
+  if (party == ALICE)
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      neg_x[i] = (neg_x[i] -1) & mask_bwL;
+    }
+  }
+  uint64_t *EMUX_output_x1 = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    EMUX_output_x1[i] = EMUX_output_x[i];
+  }
+  uint64_t *outtrunc = new uint64_t[dim];
+  uint64_t *EMUX_output_x1_h = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    // std::cout << "outtrunc[" << i << "] = " << outtrunc[i] << std::endl;
+    EMUX_output_x1_h[i] = EMUX_output_x1[i] & mask_h;
+  }
+  trunc->truncate_and_reduce(dim, inputx, outtrunc, h - s, h);
+  uint64_t N = 1ULL << s;
+  uint64_t **spec_a = new uint64_t *[dim];
+  uint64_t **spec_b = new uint64_t *[dim];
+  if (party == ALICE)
+    for (int i = 0; i < dim; i++)
+    {
+      spec_a[i] = new uint64_t[N];
+      spec_b[i] = new uint64_t[N];
+      for (int j = 0; j < N; j++)
+      {
+        spec_a[i][j] = data[j][0];
+        spec_b[i][j] = data[j][1];
+        // std::cout << "i = " << i << ", j = " << j << ", data = " << data[j][i] << std::endl;
+      }
+    }
+  uint64_t *outtrunc1 = new uint64_t[dim];
+  uint64_t *outtrunc_a = new uint64_t[dim];
+  if (party == ALICE)
+  {
+    iopack->io->send_data(outtrunc, dim * sizeof(uint64_t)); // 计算通信的时候减掉这部分
+  }
+  else
+  { // party == BOB
+    iopack->io->recv_data(outtrunc1, dim * sizeof(uint64_t));
+
+    for (int i = 0; i < dim; i++)
+    {
+      outtrunc_a[i] = (outtrunc[i] + outtrunc1[i]) & ((1ULL << s) - 1);
+      // std::cout << "outtrunc_a[" << i << "] = " << outtrunc_a[i] << std::endl;
+    }
+  }
+
+  if (party == ALICE)
+  {
+    aux->lookup_table<uint64_t>(spec_a, nullptr, nullptr, dim, s, la); // step 12 lut
+  }
+  else
+  {                                                                      // party == BOB
+    aux->lookup_table<uint64_t>(nullptr, outtrunc_a, a_bob, dim, s, la); // a_bob是查询到的斜率
+  }
+  if (party == ALICE)
+  {
+    aux->lookup_table<uint64_t>(spec_b, nullptr, nullptr, dim, s, lb); // step 12 lut
+  }
+  else
+  {                                                                      // party == BOB
+    aux->lookup_table<uint64_t>(nullptr, outtrunc_a, b_bob, dim, s, lb); // b_bob是查询到的截距  重要问题，这里的outtrunc应该是两边share加起来，代码里只有Bob的outtrunc check
+  }
+
+  uint8_t *msb1 = new uint8_t[dim];
+  uint8_t *msb2 = new uint8_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    msb1[i] = 0;
+    msb2[i] = 0;
+  }
+      if (party == ALICE)
+    {
+      for (int i = 0; i < dim; i++)
+      {
+        msb2[i] = 1;
+      }
+    }
+  uint64_t *outax = new uint64_t[dim];
+  prod->hadamard_product(dim, a_bob, x, outax, la, bwL, la + bwL, true, true, mode, msb1, msb2);
+
+  for (int i = 0; i < dim; i++)
+    outax[i] = (outax[i] >> (la - 1)) & mask_bwL;
+
+  uint64_t *b_SExt = new uint64_t[dim];
+  uint8_t *msb_b_extend = new uint8_t[dim];
+  uint64_t mask_lb = (lb == 64 ? -1 : ((1ULL << lb) - 1));
+  if (party == ALICE)
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      msb_b_extend[i] = 1;
+      b_bob[i] = (b_bob[i] + 10) & mask_lb;
+    }
+  }
+  else
+  {
+    for (int i = 0; i < dim; i++)
+    {
+      msb_b_extend[i] = 1;
+      b_bob[i] = (b_bob[i] - 10) & mask_lb;
+    }
+  }
+  // for (int i = 0; i < dim; i++)
+  // {
+  //   std::cout << "b_bob[" << i << "] = " << b_bob[i] << std::endl;
+  // }
+  ext->s_extend_msb(dim, b_bob, b_SExt, lb, bwL, msb_b_extend);
+  uint64_t *z = new uint64_t[dim];
+  for (int i = 0; i < dim; i++)
+  {
+    z[i] = ((outax[i] + b_SExt[i] * static_cast<uint64_t>(std::pow(2, f - lb + 1))) & mask_bwL);
+    // std::cout << "z[" << i << "] = " << z[i] << std::endl;
+    // std::cout << "outax[" << i << "] = " << outax[i] << std::endl;
+    // std::cout << "b_SExt[" << i << "] = " << b_SExt[i] << std::endl;
+  }
+
+  uint8_t *Drelu_ = new uint8_t[dim];
+  uint8_t *DreluMSB = new uint8_t[dim];
+  uint64_t *xhalf = new uint64_t[dim];
+  uint64_t *abs_xhalf = new uint64_t[dim];
+  uint64_t *bitMul_wrap = new uint64_t[dim];
+  uint64_t *out_last_bitwrap = new uint64_t[dim];
+  uint64_t *one_f = new uint64_t[dim];
+    uint64_t *xorz = new uint64_t[dim];
+    uint64_t *z_or_one = new uint64_t[dim];
+   uint64_t pow_f = pow(2, f);
+    for (int i = 0; i < dim; i++)
+    {
+        Drelu_[i] =  (outb[i] ^ outb_star[i]) &1;
+        one_f[i] = 0.5 * pow_f;
+    }
+    select_share(outb, x, z, xorz, dim, bwL); // step 21 ss
+
+    uint64_t *neg1 = new uint64_t[dim];
+
+        for (int i = 0; i < dim; i++)
+        {
+            neg1[i] = 1046528;
+        }
+
+    select_share(Drelu_,  xorz, neg1, y, dim, bwL); // step 20 ss
+    for (int i = 0; i < dim; i++)
+    {
+      // std::cout << "one_f[" << i << "] = " << one_f[i] << std::endl;
+      // std::cout << "z[" << i << "] = " << z[i] << std::endl;
+      // std::cout << "z_or_one[" << i << "] = " << z_or_one[i] << std::endl;
+
+    }
+    
+
+    for (int i = 0; i < dim; i++)
+    {
+      // std:: cout << "z_or_one[" << i << "] = " << z_or_one[i] << std::endl;
+      // std:: cout << "neg_z[" << i << "] = " << neg_z[i] << std::endl;
+      // std:: cout << "di_abs_z_or_one[" << i << "] = " << di_abs_z_or_one[i] << std::endl;
+
+    }
+    // for (int i = 0; i < dim; i++)
+    // {
+    //     y[i] = (di_abs_z_or_one[i]) & mask_bwL;
+    // }
+
+  delete[] a_bob;
+  delete[] b_bob;
+  delete[] outb;
+  delete[] outb_star;
+  delete[] outb_sharp;
+  delete[] EMUX_output_x;
+  delete[] neg_x;
+  delete[] EMUX_output_x1;
+  delete[] outtrunc;
+  delete[] EMUX_output_x1_h;
+  delete[] outtrunc1;
+  delete[] outtrunc_a;
+  delete[] msb1;
+  delete[] msb2;
+  delete[] b_SExt;
+  delete[] msb_b_extend;
+  delete[] z;
+  delete[] Drelu_;
+  delete[] DreluMSB;
+  delete[] xhalf;
+  delete[] abs_xhalf;
+  delete[] bitMul_wrap;
+
 }
 
 uint64_t lookup_sqrt(int32_t index, int32_t m, int32_t exp_parity)

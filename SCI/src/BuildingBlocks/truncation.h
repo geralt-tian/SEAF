@@ -26,86 +26,111 @@ SOFTWARE.
 #include "Millionaire/equality.h"
 #include "Millionaire/millionaire_with_equality.h"
 
-class Truncation {
+class Truncation
+{
 public:
-  sci::IOPack *iopack;
-  sci::OTPack *otpack;
-  TripleGenerator *triple_gen;
-  MillionaireProtocol *mill;
-  MillionaireWithEquality *mill_eq;
-  Equality *eq;
-  AuxProtocols *aux;
-  int party;
+    sci::IOPack *iopack;
+    sci::OTPack *otpack;
+    TripleGenerator *triple_gen;
+    MillionaireProtocol *mill;
+    MillionaireWithEquality *mill_eq;
+    Equality *eq;
+    AuxProtocols *aux;
+    int party;
 
-  // Constructor
-  Truncation(int party, sci::IOPack *iopack, sci::OTPack *otpack);
+    // Constructor
+    Truncation(int party, sci::IOPack *iopack, sci::OTPack *otpack);
 
-  // Destructor
-  ~Truncation();
+    // Destructor
+    ~Truncation();
 
-  // Truncate (right-shift) by shift in the same ring (round towards -inf)
-  void truncate(
-      // Size of vector
-      int32_t dim,
-      // input vector
-      uint64_t *inA,
-      // output vector
-      uint64_t *outB,
-      // right shift amount
-      int32_t shift,
-      // Input and output bitwidth
-      int32_t bw,
-      // signed truncation?
-      bool signed_arithmetic = true,
-      // msb of input vector elements
-      uint8_t *msb_x = nullptr);
+    // Truncate (right-shift) by shift in the same ring (round towards -inf)
+    void truncate(
+        // Size of vector
+        int32_t dim,
+        // input vector
+        uint64_t *inA,
+        // output vector
+        uint64_t *outB,
+        // right shift amount
+        int32_t shift,
+        // Input and output bitwidth
+        int32_t bw,
+        // signed truncation?
+        bool signed_arithmetic = true,
+        // msb of input vector elements
+        uint8_t *msb_x = nullptr);
 
-  // Divide by 2^shift in the same ring (round towards 0)
-  void div_pow2(
-      // Size of vector
-      int32_t dim,
-      // input vector
-      uint64_t *inA,
-      // output vector
-      uint64_t *outB,
-      // right shift amount
-      int32_t shift,
-      // Input and output bitwidth
-      int32_t bw,
-      // signed truncation?
-      bool signed_arithmetic = true,
-      // msb of input vector elements
-      uint8_t *msb_x = nullptr);
+    // Divide by 2^shift in the same ring (round towards 0)
+    void div_pow2(
+        // Size of vector
+        int32_t dim,
+        // input vector
+        uint64_t *inA,
+        // output vector
+        uint64_t *outB,
+        // right shift amount
+        int32_t shift,
+        // Input and output bitwidth
+        int32_t bw,
+        // signed truncation?
+        bool signed_arithmetic = true,
+        // msb of input vector elements
+        uint8_t *msb_x = nullptr);
 
-  // Truncate (right-shift) by shift in the same ring
-  void truncate_red_then_ext(
-      // Size of vector
-      int32_t dim,
-      // input vector
-      uint64_t *inA,
-      // output vector
-      uint64_t *outB,
-      // right shift amount
-      int32_t shift,
-      // Input and output bitwidth
-      int32_t bw,
-      // signed truncation?
-      bool signed_arithmetic = true,
-      // msb of input vector elements
-      uint8_t *msb_x = nullptr);
+    // Truncate (right-shift) by shift in the same ring
+    void truncate_red_then_ext(
+        // Size of vector
+        int32_t dim,
+        // input vector
+        uint64_t *inA,
+        // output vector
+        uint64_t *outB,
+        // right shift amount
+        int32_t shift,
+        // Input and output bitwidth
+        int32_t bw,
+        // signed truncation?
+        bool signed_arithmetic = true,
+        // msb of input vector elements
+        uint8_t *msb_x = nullptr);
 
-  // Truncate (right-shift) by shift and go to a smaller ring
-  void truncate_and_reduce(
-      // Size of vector
-      int32_t dim,
-      // input vector
-      uint64_t *inA,
-      // output vector
-      uint64_t *outB,
-      // right shift amount
-      int32_t shift,
-      // Input bitwidth
-      int32_t bw);
+    // Truncate (right-shift) by shift and go to a smaller ring
+    void truncate_and_reduce(
+        // Size of vector
+        int32_t dim,
+        // input vector
+        uint64_t *inA,
+        // output vector
+        uint64_t *outB,
+        // right shift amount
+        int32_t shift,
+        // Input bitwidth
+        int32_t bw);
+
+            void truncate_and_reduce_eight_bit_wrap(
+        // Size of vector
+        int32_t dim,
+        // input vector
+        uint64_t *inA,
+        // output vector
+        uint64_t *outB,
+        uint64_t *eight_bit_wrap,
+        // right shift amount
+        int32_t shift,
+        // Input bitwidth
+        int32_t bw);
+
+    void cross_term(int32_t dim, uint64_t *inA, uint64_t *inB, uint64_t *outC, int32_t bwA, int32_t bwB,
+                                int32_t bwC);
+
+    void cross_term_reverse(int32_t dim, uint64_t *inA, uint64_t *inB, uint64_t *outC, int32_t bwA, int32_t bwB,
+                                        int32_t bwC);
+
+    void unsigned_mul(int32_t dim, uint64_t *inA, uint64_t *inB, uint64_t *outC, int32_t bwA, int32_t bwB,
+                                  int32_t bwC);
+    // void Truncation::gp_unsigned_mul(int32_t dim, uint64_t *inA, uint64_t *inB, uint64_t *outC, int32_t bwA, int32_t bwB,
+    //                                  int32_t bwC);
 };
 
 #endif // TRUNCATION_H__
