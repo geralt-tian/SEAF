@@ -58,17 +58,6 @@ uint64_t computeULPErr(double calc, double actual, int SCALE)
 
 double calculate_GELU(double value)
 {
-    // // 假设 bwL 和 f 已经定义，分别表示总位宽和小数部分位数
-    // const int64_t shift_amount = 64 - bwL; // 计算需要左移的位数
-
-    // // 将无符号整数进行符号扩展
-    // int64_t signed_value = static_cast<int64_t>(value << shift_amount) >> shift_amount;
-
-    // // 将定点数转换为浮点数
-    // const double pow_2_f = static_cast<double>(1ULL << f);
-    // double x = static_cast<double>(signed_value) / pow_2_f;
-
-    // 计算 GELU 函数值
     return 0.5 * value + 0.5 * value * std::erf(value / 1.414);
 }
 

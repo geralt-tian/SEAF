@@ -30,14 +30,14 @@ OTPack *otpack;
 LinearOT *prod;
 XTProtocol *ext;
 
-int bwL = 21; // 矩阵位宽
+int bwL = 21; // 
 uint64_t mask_bwL = (bwL == 64 ? -1 : ((1ULL << bwL) - 1));
 int bwL_1 = bwL - 1;
 uint64_t mask_bwL_1 = (bwL_1 == 64 ? -1 : ((1ULL << bwL_1) - 1));
-bool signed_B = true;           // 表示矩阵B是否为有符号数
-bool accumulate = true;         // 决定是否累加结果
-bool precomputed_MSBs = false;  // 决定是否预计算最高有效位
-MultMode mode = MultMode::None; // 乘法模式
+bool signed_B = true;           // 
+bool accumulate = true;         // 
+bool precomputed_MSBs = false;  // 
+MultMode mode = MultMode::None; // 
 
 // uint64_t la = 14;//la=5 f=5,la=14,f=12
 uint64_t lb = 10;
@@ -64,7 +64,7 @@ uint64_t mask_lla = ((la + bwL) == 64 ? -1 : ((1ULL << (la + bwL)) - 1));
 // uint64_t s = 7;
 uint64_t mask_s = ((s) == 64 ? -1 : ((1ULL << (s)) - 1));
 uint64_t mask_h = (h == 64) ? ~0ULL : (1ULL << h) - 1;
-// s = 5(低精度)，s = 6(高)， s = 7 与 s = 6 误差相差不大
+
 Truncation *trunc_oracle;
 AuxProtocols *aux;
 MillionaireWithEquality *mill_eq;
@@ -72,33 +72,20 @@ Equality *eq;
 
 double calculate_GELU(uint64_t value)
 {
-    // 假设 bwL 和 f 已经定义，分别表示总位宽和小数部分位数
-    const int64_t shift_amount = 64 - bwL; // 计算需要左移的位数
-
-    // 将无符号整数进行符号扩展
+    const int64_t shift_amount = 64 - bwL; 
     int64_t signed_value = static_cast<int64_t>(value << shift_amount) >> shift_amount;
-
-    // 将定点数转换为浮点数
     const double pow_2_f = static_cast<double>(1ULL << f);
     double x = static_cast<double>(signed_value) / pow_2_f;
-
-    // 计算 GELU 函数值
     return 0.5 * x + 0.5 * x * std::erf(x / 1.414);
 }
 
 double calculate_tanh(uint64_t value, uint64_t f_tanh)
 {
-    // 计算需要左移的位数以进行符号扩展
+
     const int64_t shift_amount = 64 - bwL;
-
-    // 将无符号整数进行符号扩展
     int64_t signed_value = static_cast<int64_t>(value << shift_amount) >> shift_amount;
-
-    // 将定点数转换为浮点数
     const double pow_2_f = static_cast<double>(1ULL << f_tanh);
     double x = static_cast<double>(signed_value) / pow_2_f;
-
-    // 计算 tanh 函数值
     return std::tanh(x);
 }
 
@@ -114,7 +101,7 @@ uint64_t computeULPErr(double calc, double actual, int SCALE)
 
 int64_t decode_ring(uint64_t input, uint64_t bw)
 {
-    // 从环上解码值
+    // 
     uint64_t mask = (bw == 64) ? ~0ULL : (1ULL << bw) - 1;
     uint64_t half = 1ULL << (bw - 1);
 
@@ -276,9 +263,6 @@ void third_interval(uint64_t *input_data, uint8_t *res_drelu_cmp, uint8_t *res_d
     eq->check_equality(res_eq, comp_eq_input, dim, bwL - h);
 }
 
-//////////////////////
-// 初始化
-///////////////////////////////
 int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
 {
 
@@ -311,11 +295,11 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
     uint64_t **spec_a = new uint64_t *[dim];
     uint64_t *a_bob = new uint64_t[dim];
     uint64_t N = 1ULL << s; // LUT size
-    ////////////////////////////////////////////ALICE从csv文件中读取data，做自动化测试
+
     std::vector<std::vector<uint64_t>> data;
     if (party == ALICE)
     {
-        std::ifstream file("/home/ubuntu/EzPC/tanh_la_ld_s6.csv");
+        std::ifstream file("/home/ubuntu/bolt/EzPC/tanh_la_ld_s6.csv");
         if (!file.is_open())
         {
             std::cerr << "fail to open the file!" << std::endl;
@@ -323,47 +307,43 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
         }
 
         std::string line;
-        int target_line = 24 * (la - 2) + 2 * (lb - 1); // 目标行号（从0计数：0行是 la=6,ld=10，1行是数据行）计算一下行号
+        int target_line = 24 * (la - 2) + 2 * (lb - 1);
         int current_line = 0;
 
-        // 定义存储数据的二维 vector
-
-        // 逐行读取文件
         while (std::getline(file, line))
         {
             current_line++;
 
-            // 如果当前行是目标行
+
             if (current_line == target_line)
             {
-                // 定位到 "{{" 和 "}}" 来提取数据部分
+                
                 std::size_t start_pos = line.find("{{");
                 std::size_t end_pos = line.find("}}");
 
                 if (start_pos != std::string::npos && end_pos != std::string::npos)
                 {
-                    // 提取数据部分，去掉 "{{" 和 "}}"
+                    
                     std::string data_part = line.substr(start_pos + 2, end_pos - start_pos - 2);
 
-                    // 使用 stringstream 分割每个 {a,b}
+               
                     std::stringstream ss(data_part);
                     std::string pair_str;
 
                     while (std::getline(ss, pair_str, '}'))
                     {
-                        // 找到 '{' 的位置，忽略前面的逗号或空白
+                        
                         std::size_t open_bracket_pos = pair_str.find('{');
                         if (open_bracket_pos != std::string::npos)
                         {
-                            pair_str = pair_str.substr(open_bracket_pos + 1); // 获取 { 后面的内容
+                            pair_str = pair_str.substr(open_bracket_pos + 1); 
                         }
 
-                        // 将每个数对 (a,b) 解析为两个数字
                         std::stringstream pair_stream(pair_str);
                         std::string number_str;
                         std::vector<uint64_t> pair;
 
-                        // 提取逗号分隔的数字
+                        
                         while (std::getline(pair_stream, number_str, ','))
                         {
                             if (!number_str.empty())
@@ -379,7 +359,7 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
                 }
             }
         }
-        // 关闭文件
+
         file.close();
     }
 
@@ -397,9 +377,7 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
         inA[i] = (0 + i * 0) & mask_bwL;
         inB[i] = (init_input + i * step_size) & mask_bwL;
     }
-    /////////////////////////////////////
-    // 区间判断阶段
-    /////////////////////////////////////
+
     uint8_t *outb = new uint8_t[dim];
     uint8_t *outb_star = new uint8_t[dim];
     uint8_t *outb_sharp = new uint8_t[dim];
@@ -442,7 +420,7 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
     {
         for (int i = 0; i < dim; i++)
         {
-            neg_inA[i] = ((-inA[i]+1048575) & mask_bwL); // 取反
+            neg_inA[i] = ((-inA[i]+1048575) & mask_bwL); //
         }
         select_share(Drelu, inA, neg_inA, EMUX_output_x, dim, bwL); // step 10
         // aux->multiplexerabs(Drelu, inA, EMUX_output_x, dim, bwL, bwL);
@@ -451,7 +429,7 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
     {
         for (int i = 0; i < dim; i++)
         {
-            neg_inB[i] = ((-inB[i]+1048576) & mask_bwL); // 取反
+            neg_inB[i] = ((-inB[i]+1048576) & mask_bwL); // 
         }
         select_share(Drelu, inB, neg_inB, EMUX_output_x, dim, bwL);
         // aux->multiplexerabs(Drelu, inB, EMUX_output_x, dim, bwL, bwL);
@@ -467,7 +445,7 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
     std::cout << "inB[" << 0 << "] = " << inB[0] << std::endl;
     assign_lower_h_bits(dim, inA, inB, inA_h, inB_h, h);
 
-    //////////////////////////////////////////////////////// general版本：直接截取，不用截断协议；高精度版本：使用截断协议
+
     // step6 check
     std::cout << "\n=========STEP7 get mid s bit for LUT===========" << std::endl;
 
@@ -530,7 +508,7 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
     uint64_t STEPLUTexternal_comm_start = iopack->get_comm();
     if (party == ALICE)
     {
-        iopack->io->send_data(outtrunc, dim * sizeof(uint64_t)); // 计算通信的时候减掉这部分
+        iopack->io->send_data(outtrunc, dim * sizeof(uint64_t)); 
     }
     else
     { // party == BOB
@@ -551,14 +529,14 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
     }
     else
     {                                                                        // party == BOB
-        aux->lookup_table<uint64_t>(nullptr, outtrunc_a, a_bob, dim, s, la); // a_bob是查询到的斜率
+        aux->lookup_table<uint64_t>(nullptr, outtrunc_a, a_bob, dim, s, la); // 
     }
     if (party != ALICE)
         for (int i = 0; i < dim; i++)
         {
             // std::cout << "a_bob[" << i << "] = " << a_bob[i] << std::endl;
         }
-    /////选择截距
+
     uint64_t **spec_b = new uint64_t *[dim];
     uint64_t *b_bob = new uint64_t[dim];
     if (party == ALICE)
@@ -576,7 +554,7 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
     }
     else
     {                                                                        // party == BOB
-        aux->lookup_table<uint64_t>(nullptr, outtrunc_a, b_bob, dim, s, lb); // b_bob是查询到的截距  重要问题，这里的outtrunc应该是两边share加起来，代码里只有Bob的outtrunc check
+        aux->lookup_table<uint64_t>(nullptr, outtrunc_a, b_bob, dim, s, lb); //
     }
     if (party != ALICE)
     {
@@ -636,8 +614,7 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
     }
     uint64_t STEP7_comm_end = iopack->get_comm();
 
-    std::cout << "\n=========STEP8 ax truncate from l+la to l+1  ===========" << std::endl; // 跟协议对不上，这里直接得到了axl
-                                                                                            //////////////////////////////////////////////////////// general版本：直接截取，不用截断协议；高精度版本：使用截断协议
+    std::cout << "\n=========STEP8 ax truncate from l+la to l+1  ===========" << std::endl; // 
     uint8_t *msb_zero = new uint8_t[dim];
     for (int i = 0; i < dim; i++)
     {
@@ -859,7 +836,7 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
         }
 
         double sum = 0.0;
-        for (size_t i = 1; i < dim; ++i) // 去掉了第一个ULP
+        for (size_t i = 1; i < dim; ++i) // 
         {
             sum += (ULPs[i]);
             // std::cout << "ULPs[" << i << "] = " << ULPs[i] << std::endl;
@@ -867,23 +844,10 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
         double average = sum / static_cast<double>(dim);
         std::cout << "sum: " << sum << std::endl;
         std::cout << "static_cast<double>(dim): " << static_cast<double>(dim) << std::endl;
-        double max_val = *std::max_element(ULPs + 1, ULPs + dim); // 去掉了第一个ULP
+        double max_val = *std::max_element(ULPs + 1, ULPs + dim); // 
         std::cout << "average: " << average << std::endl;
         std::cout << "max_val: " << max_val << std::endl;
-        // 绘制曲线
-        // plt::scatter(x_values, y_values, 2 , {{"color", "red"},{"marker", "."}});
-        // plt::scatter(x_real, y_real, 1, {{"color", "blue"},{"marker", "."},{"edgecolors", "none"},
-        //     {"alpha", "0.7"},
-        //     {"label", "GELU"} });
 
-        // 设置标题和标签
-        // plt::title("Simple Line Plot");
-        // plt::xlabel("x-axis");
-        // plt::ylabel("y-axis");
-        // // 显示图形
-        // // plt::legend();
-        // plt::save("/home/zhaoqian/EzPC/test.svg");
-        // plt::show();
         uint64_t *alice_comm = new uint64_t[1];
         iopack->io->recv_data(alice_comm, 1 * sizeof(uint64_t));
 
@@ -941,7 +905,6 @@ delete[] outtrunc;
 delete[] outtrunc1;
 delete[] outtrunc_a;
 
-// 释放二维动态数组 spec_a 和 spec_b
 if (party == ALICE) {
     for (int i = 0; i < dim; i++) {
         delete[] spec_a[i];
@@ -969,9 +932,6 @@ delete[] bitMul_wrap;
 delete[] out_last_bitwrap;
 delete[] y;
 
-// 释放动态分配的通信数组
-
-// 释放动态分配的对象
 delete prod;
 delete aux;
 delete trunc_oracle;
