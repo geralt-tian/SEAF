@@ -290,7 +290,7 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
     std::vector<std::vector<uint64_t>> data;
     if (party == ALICE)
     {
-        std::ifstream file("/home/ubuntu/bolt/EzPC/gelu_la_ld_s6.csv");
+        std::ifstream file("/home/ubuntu/EzPC/gelu_la_ld_s6.csv");
         if (!file.is_open())
         {
             std::cerr << "fail to open the file!" << std::endl;
