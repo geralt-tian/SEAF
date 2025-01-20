@@ -862,7 +862,6 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
             return 1;
         }
 
-        // 写入CSV头
         // file << "la,ld,average ULP, MAX ULP , Total comm , Total time\n";
         auto total_time = chrono::duration_cast<chrono::milliseconds>(time_end - time_start).count();
         file << la << "," << lb << ",  " << average << ",   " << max_val << "  , " << total_comm << ",    " << total_time << "\n";

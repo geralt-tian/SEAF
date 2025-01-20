@@ -478,8 +478,8 @@ int init_test(uint64_t i, uint64_t j, uint64_t k, uint64_t l)
     }
     else
     {
-        trunc_oracle->truncate_and_reduce(dim, EMUX_output_x1_h, outtrunc, h - s, h); // shift=h-s,hypothesis s=7,outtrunc是0-127
-                                                                                      // std::cout << "outtrunc[" << 0 << "] = " << outtrunc[0] << std::endl; // outtrunc是<i>，范围是0-127
+        trunc_oracle->truncate_and_reduce(dim, EMUX_output_x1_h, outtrunc, h - s, h); // 
+                                                                                      // std::cout << "outtrunc[" << 0 << "] = " << outtrunc[0] << std::endl; 
     }
     uint64_t STEP5_comm_end = iopack->get_comm();
     std::cout << "\n=========STEP6 LookUp Table   ===========" << std::endl;

@@ -1,11 +1,10 @@
 
-# 查找 Python3 和 NumPy
 find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 
-# 设置 matplotlib-cpp 的路径（假设它位于项目根目录下的 matplotlib-cpp 文件夹中）
+
 set(MATPLOTLIB_CPP_DIR "${CMAKE_SOURCE_DIR}/matplotlib-cpp")
 
-# 包含 matplotlib-cpp 头文件
+
 include_directories(${MATPLOTLIB_CPP_DIR})
 macro (add_test_OT _name)
     add_executable(${_name}-OT "test_ring_${_name}.cpp")
