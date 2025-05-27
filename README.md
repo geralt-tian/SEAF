@@ -2,7 +2,7 @@
 
 ## Setup
 
-For setup instructions, please refer to the README file in the 'SCI' folder.
+For setup instructions, please refer to the README file in the `SCI` folder.
 
 We successfully completed the compilation on Ubuntu 22.04.5 LTS with Intel(R) Xeon(R) Platinum 8475B.
 
@@ -34,6 +34,7 @@ The code for this project is organized as follows:
 
 ##Running Tests
 
-Run the unit tests in SEAF/ folder of Generalized Geometric MPC Protocols as follows:
-
-'./SCI/build/bin/BOLT_BERT_SEAF r=1 & ./SCI/build/bin/BOLT_BERT_SEAF r=2'
+Run the unit tests in `SEAF/` folder of Generalized Geometric MPC Protocols as follows:
+'''
+./SCI/build/bin/BOLT_BERT_SEAF r=1 & ./SCI/build/bin/BOLT_BERT_SEAF r=2
+'''
