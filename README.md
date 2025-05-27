@@ -19,9 +19,9 @@ The project is organized as follows:
 
 
 - **/SEAF/SCI/tests/bert_iron**  
-  Provides implementations of both the GELU activation function and BERT model inference using SEAF and Iron.
+  Contains the implementation of BERT model inference using Iron + SEAF. 
 
-- **New Activation Functions**  
+- **Our improved Activation Functions**  
   The **/SEAF/SCI/tests** directory now includes four SEAF version activation functions:  
   - ELU  
   - GELU  
