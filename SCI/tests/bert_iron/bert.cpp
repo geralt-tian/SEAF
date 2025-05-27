@@ -221,7 +221,7 @@ vector<Plaintext> Bert::he_to_ss_client(HE* he, int length){
     recv_encrypted_vector(he->context, io, cts);
     for(int i = 0; i < length; i++){
         Plaintext pt;
-        he->decryptor->decrypt_keep_zero_coeff(cts[i], pt);
+        he->decryptor->decrypt(cts[i], pt);
         pts.push_back(pt);
     }
     #ifdef BERT_PERF

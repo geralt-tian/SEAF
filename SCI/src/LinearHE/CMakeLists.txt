@@ -12,7 +12,7 @@ if (NOT SEAL_FOUND)
         execute_process(COMMAND git apply "${PROJECT_SOURCE_DIR}/cmake/seal.patch"
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/extern/SEAL")
     endif ()
-    execute_process(COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${PROJECT_SOURCE_DIR}/build .
+    execute_process(COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${PROJECT_SOURCE_DIR}/build -DSEAL_THROW_ON_TRANSPARENT_CIPHERTEXT=OFF .
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/extern/SEAL/")
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --target install
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/extern/SEAL/")

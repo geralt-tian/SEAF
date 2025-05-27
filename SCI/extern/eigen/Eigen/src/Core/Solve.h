@@ -19,7 +19,7 @@ template<typename Decomposition, typename RhsType, typename StorageKind> class S
   *
   * \brief Pseudo expression representing a solving operation
   *
-  * \tparam Decomposition the type of the matrix or decomposition object
+  * \tparam Decomposition the type of the matrix or decomposion object
   * \tparam Rhstype the type of the right-hand side
   *
   * This class represents an expression of A.solve(B)
@@ -34,12 +34,12 @@ template<typename Decomposition, typename RhsType,typename StorageKind> struct s
 template<typename Decomposition, typename RhsType>
 struct solve_traits<Decomposition,RhsType,Dense>
 {
-  typedef typename make_proper_matrix_type<typename RhsType::Scalar,
+  typedef Matrix<typename RhsType::Scalar,
                  Decomposition::ColsAtCompileTime,
                  RhsType::ColsAtCompileTime,
                  RhsType::PlainObject::Options,
                  Decomposition::MaxColsAtCompileTime,
-                 RhsType::MaxColsAtCompileTime>::type PlainObject;
+                 RhsType::MaxColsAtCompileTime> PlainObject;  
 };
 
 template<typename Decomposition, typename RhsType>
@@ -181,7 +181,7 @@ struct Assignment<DstXprType, Solve<CwiseUnaryOp<internal::scalar_conjugate_op<t
   }
 };
 
-} // end namespace internal
+} // end namepsace internal
 
 } // end namespace Eigen
 

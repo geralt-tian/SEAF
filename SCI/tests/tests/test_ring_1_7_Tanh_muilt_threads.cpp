@@ -96,8 +96,8 @@ int main(int argc, char **argv)
     amap.parse(argc, argv);
 
     assert(num_threads <= MAX_THREADS);
-    int32_t la = 21;
-    int32_t lb = 21;
+    int32_t la = 4;
+    int32_t lb = 10;
     // int32_t la = 5;
     // int32_t lb = 11;
     // int32_t la = 7;

@@ -46,3 +46,10 @@ The code for this project is organized as follows:
   - Sigmoid  
   - Tanh  
 ```
+
+
+Please go to SEAF 目录并执行
+
+./SCI/build/bin/BOLT_BERT_new r=1
+
+./SCI/build/bin/BOLT_BERT_new r=2

@@ -14,8 +14,8 @@ string address = "127.0.0.1";
 int num_threads = 32;
 int bitlength = 37;
 
-string path = "/home/ubuntu/EzPC/quantize/mrpc";
-string output_file_path = "/home/ubuntu/EzPC/ppnlp_test_new.txt";
+string path = "quantize/mrpc";
+string output_file_path = "ppnlp_test_new.txt";
 int num_class = 2;
 int sample_id = 0;
 int num_sample = 1;
@@ -40,7 +40,8 @@ int main(int argc, char **argv) {
     cout << "-> Address: " << address << endl;
     cout << "-> Port: " << port << endl;
     cout << "<<<" << endl << endl;
-    Bert bt(party, port, address, path + "/weights_txt/", pruning);
+
+    Bert bt(party, port, address, path + "/weights_txt/");
 
     auto start = high_resolution_clock::now();
     
@@ -67,10 +68,10 @@ int main(int argc, char **argv) {
             if(result.size() == 1){
                 file << result[0]<< endl;
             } else if(result.size() == 2){
-                inference_results.push_back(result);
+                // inference_results.push_back(result);
                 auto max_ele = max_element(result.begin(), result.end());
                 int max_index = distance(result.begin(), max_ele);
-                predicted_labels.push_back(max_index);
+                // predicted_labels.push_back(max_index);
                 file << max_index << "," 
                         << result[0]<< "," 
                         << result[1] << endl;

@@ -21,14 +21,12 @@ template< typename T,
           bool is_integer = NumTraits<T>::IsInteger>
 struct default_digits10_impl
 {
-  EIGEN_DEVICE_FUNC
   static int run() { return std::numeric_limits<T>::digits10; }
 };
 
 template<typename T>
 struct default_digits10_impl<T,false,false> // Floating point
 {
-  EIGEN_DEVICE_FUNC
   static int run() {
     using std::log10;
     using std::ceil;
@@ -40,38 +38,6 @@ struct default_digits10_impl<T,false,false> // Floating point
 template<typename T>
 struct default_digits10_impl<T,false,true> // Integer
 {
-  EIGEN_DEVICE_FUNC
-  static int run() { return 0; }
-};
-
-
-// default implementation of digits(), based on numeric_limits if specialized,
-// 0 for integer types, and log2(epsilon()) otherwise.
-template< typename T,
-          bool use_numeric_limits = std::numeric_limits<T>::is_specialized,
-          bool is_integer = NumTraits<T>::IsInteger>
-struct default_digits_impl
-{
-  EIGEN_DEVICE_FUNC
-  static int run() { return std::numeric_limits<T>::digits; }
-};
-
-template<typename T>
-struct default_digits_impl<T,false,false> // Floating point
-{
-  EIGEN_DEVICE_FUNC
-  static int run() {
-    using std::log;
-    using std::ceil;
-    typedef typename NumTraits<T>::Real Real;
-    return int(ceil(-log(NumTraits<Real>::epsilon())/log(static_cast<Real>(2))));
-  }
-};
-
-template<typename T>
-struct default_digits_impl<T,false,true> // Integer
-{
-  EIGEN_DEVICE_FUNC
   static int run() { return 0; }
 };
 
@@ -153,12 +119,6 @@ template<typename T> struct GenericNumTraits
   }
 
   EIGEN_DEVICE_FUNC
-  static inline int digits()
-  {
-    return internal::default_digits_impl<T>::run();
-  }
-
-  EIGEN_DEVICE_FUNC
   static inline Real dummy_precision()
   {
     // make sure to override this for floating-point types
@@ -173,8 +133,7 @@ template<typename T> struct GenericNumTraits
 
   EIGEN_DEVICE_FUNC
   static inline T lowest()  {
-    return IsInteger ? (numext::numeric_limits<T>::min)()
-                     : static_cast<T>(-(numext::numeric_limits<T>::max)());
+    return IsInteger ? (numext::numeric_limits<T>::min)() : (-(numext::numeric_limits<T>::max)());
   }
 
   EIGEN_DEVICE_FUNC
@@ -256,8 +215,6 @@ struct NumTraits<Array<Scalar, Rows, Cols, Options, MaxRows, MaxCols> >
   static inline RealScalar epsilon() { return NumTraits<RealScalar>::epsilon(); }
   EIGEN_DEVICE_FUNC
   static inline RealScalar dummy_precision() { return NumTraits<RealScalar>::dummy_precision(); }
-
-  static inline int digits10() { return NumTraits<Scalar>::digits10(); }
 };
 
 template<> struct NumTraits<std::string>
@@ -283,8 +240,6 @@ private:
 
 // Empty specialization for void to allow template specialization based on NumTraits<T>::Real with T==void and SFINAE.
 template<> struct NumTraits<void> {};
-
-template<> struct NumTraits<bool> : GenericNumTraits<bool> {};
 
 } // end namespace Eigen
 

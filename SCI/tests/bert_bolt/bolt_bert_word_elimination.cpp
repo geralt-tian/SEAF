@@ -14,8 +14,8 @@ string address = "127.0.0.1";
 int num_threads = 4;
 int bitlength = 37;
 
-string path = "/home/ubuntu/prune/mrpc/";
-string output_file_path = "/home/ubuntu/clive/EzPC/ppnlp_test.txt";
+string path = "quantize/mrpc";
+string output_file_path = "ppnlp_test_new.txt";
 int num_class = 2;
 int sample_id = 0;
 int num_sample = 1;

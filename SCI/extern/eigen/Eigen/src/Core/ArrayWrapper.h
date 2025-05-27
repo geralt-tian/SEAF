@@ -32,8 +32,7 @@ struct traits<ArrayWrapper<ExpressionType> >
   // Let's remove NestByRefBit
   enum {
     Flags0 = traits<typename remove_all<typename ExpressionType::Nested>::type >::Flags,
-    LvalueBitFlag = is_lvalue<ExpressionType>::value ? LvalueBit : 0,
-    Flags = (Flags0 & ~(NestByRefBit | LvalueBit)) | LvalueBitFlag
+    Flags = Flags0 & ~NestByRefBit
   };
 };
 }
@@ -90,8 +89,8 @@ class ArrayWrapper : public ArrayBase<ArrayWrapper<ExpressionType> >
     EIGEN_DEVICE_FUNC
     inline void evalTo(Dest& dst) const { dst = m_expression; }
 
-    EIGEN_DEVICE_FUNC
     const typename internal::remove_all<NestedExpressionType>::type& 
+    EIGEN_DEVICE_FUNC
     nestedExpression() const 
     {
       return m_expression;
@@ -130,8 +129,7 @@ struct traits<MatrixWrapper<ExpressionType> >
   // Let's remove NestByRefBit
   enum {
     Flags0 = traits<typename remove_all<typename ExpressionType::Nested>::type >::Flags,
-    LvalueBitFlag = is_lvalue<ExpressionType>::value ? LvalueBit : 0,
-    Flags = (Flags0 & ~(NestByRefBit | LvalueBit)) | LvalueBitFlag
+    Flags = Flags0 & ~NestByRefBit
   };
 };
 }

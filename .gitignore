@@ -1,6 +1,7 @@
 # Build Directory
 build/
 bin/
+extern/
 # quantize/
 mpc_venv
 # Vim c_tags files

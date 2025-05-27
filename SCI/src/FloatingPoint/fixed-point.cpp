@@ -1258,6 +1258,7 @@ FixArray FixOp::poly1(const FixArray& p){
 
   int ell = p.ell;
   int scale = p.s;
+  // std::cout << "poly1: " << ell << " " << scale << std::endl;
   
   BoolArray all_1 = bool_op->input(ALICE, p.size, 1);
   BoolArray all_0 = bool_op->input(ALICE, p.size, uint8_t(0));

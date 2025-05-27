@@ -34,8 +34,8 @@ find_dependency(GMP REQUIRED)
 find_dependency(Threads REQUIRED)
 
 set_and_check(INSTALL_DIR "${PACKAGE_PREFIX_DIR}")
-find_dependency(Eigen3 REQUIRED PATHS "/home/ubuntu/bolt/EzPC/SCI/build/../extern/eigen/build" NO_DEFAULT_PATH)
-find_dependency(SEAL REQUIRED PATHS "/home/ubuntu/bolt/EzPC/SCI/build" NO_DEFAULT_PATH)
+find_dependency(Eigen3 REQUIRED PATHS "/root/SEAF/SCI/build/../extern/eigen/build" NO_DEFAULT_PATH)
+find_dependency(SEAL REQUIRED PATHS "/root/SEAF/SCI/build" NO_DEFAULT_PATH)
 find_dependency(OpenMP REQUIRED)
 
 # Add the targets file
