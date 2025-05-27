@@ -14,19 +14,15 @@ The project is organized as follows:
 - **/SEAF/SCI/tests**  
   Contains all SEAF-related code, including implementations of activation functions and models.
 
-- **/SEAF/SCI/tests/activation**  
-  Includes the SEAF implementation of the GELU activation function. The main file is:  
-  **`activation/bolt_gelu_new.cpp`**
-
 - **/SEAF/SCI/tests/bert_bolt**  
-  Contains the implementation of BERT model inference using Bolt + SEAF. The main file is:  
-  **`bert_bolt_SEAF.cpp`**
+  Contains the implementation of BERT model inference using Bolt + SEAF. 
+
 
 - **/SEAF/SCI/tests/bert_iron**  
   Provides implementations of both the GELU activation function and BERT model inference using SEAF and Iron.
 
 - **New Activation Functions**  
-  The **/SEAF/SCI/tests** directory now includes four new activation functions:  
+  The **/SEAF/SCI/tests** directory now includes four SEAF version activation functions:  
   - ELU  
   - GELU  
   - Sigmoid  
