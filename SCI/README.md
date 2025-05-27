@@ -20,10 +20,6 @@ SEAL can be installed as follows:
 ```
 mkdir -p extern && cd extern
 git clone --branch 4.1.1 https://github.com/microsoft/SEAL.git
-cd SEAL/native/src
-cmake .
-make
-sudo make install
 ```
 
 Eigen can be installed as follows:
