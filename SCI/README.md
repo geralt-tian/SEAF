@@ -19,7 +19,7 @@ SEAL can be installed as follows:
 
 ```
 mkdir -p extern && cd extern
-git clone --branch 3.3.2 https://github.com/microsoft/SEAL.git
+git clone --branch 4.1.1 https://github.com/microsoft/SEAL.git
 cd SEAL/native/src
 cmake .
 make
