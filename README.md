@@ -1,7 +1,6 @@
 # SEAF: Secure Evaluation on Activation Functions with Dynamic Precision for Secure Two-Party Inference
 
-**Reference Repository:**  
-**Project webpage:** <[BOLT](https://github.com/Clive2312/EzPC/tree/bert/SCI)>
+
 
 ## Setup
 
@@ -38,3 +37,6 @@ To run the unit tests in the `SEAF/` folder of Generalized Geometric MPC Protoco
 ```bash
 ./SCI/build/bin/BOLT_BERT_SEAF r=1 & ./SCI/build/bin/BOLT_BERT_SEAF r=2
 ```
+
+**Reference Repository:**  
+**Project webpage:** <[BOLT](https://github.com/Clive2312/EzPC/tree/bert/SCI)>
