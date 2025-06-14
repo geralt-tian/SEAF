@@ -1,5 +1,8 @@
 # SEAF: Secure Evaluation on Activation Functions with Dynamic Precision for Secure Two-Party Inference
 
+**Reference Repository:**  
+**Project webpage:** <[https://aka.ms/ezpc](https://github.com/Clive2312/EzPC/tree/bert/SCI)>
+
 ## Setup
 
 For setup instructions, please refer to the README file located in the `SCI` folder.
